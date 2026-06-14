@@ -1,12 +1,8 @@
-# Replace legisnote.example.com with your real domain.
-# Caddy obtains and renews TLS automatically (D: self-hosted on VPS).
+# Domain comes from LEGISNOTE_DOMAIN (infra/.env), injected by docker-compose.
+# Set it to your real domain on the VPS and Caddy obtains + renews TLS
+# automatically. Defaults to localhost (plain HTTP) for local runs.
 
-legisnote.example.com {
+{$LEGISNOTE_DOMAIN:localhost} {
 	encode zstd gzip
 	reverse_proxy web:3000
 }
-
-# Local development over plain HTTP:
-#   http://localhost {
-#       reverse_proxy web:3000
-#   }

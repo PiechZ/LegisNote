@@ -75,3 +75,37 @@ export function* walkUnits(units: ManifestUnit[]): Generator<ManifestUnit> {
     if (u.children) yield* walkUnits(u.children);
   }
 }
+
+/**
+ * Read-only view model for the reader UI (`apps/web/src/reader`) and any static
+ * export. Unlike the ingestion `Manifest`, it carries the resolved stable
+ * `nodeId` (the annotation `data-anchor`, architecture §2.2) and a single chosen
+ * snapshot. The DB reader maps `snapshot_unit` rows onto this shape; a static
+ * build maps `ManifestUnit` onto the same shape.
+ */
+export interface ReaderUnit {
+  nodeId: string; // stable structural_node id → rendered as data-anchor
+  nodeKey?: string | null;
+  nodeType: NodeType;
+  label?: string | null; // "§ 5", "(2)", "a)", "ČÁST PRVNÍ"
+  ordinal: number;
+  text?: string | null;
+  children: ReaderUnit[]; // ordered by ordinal
+}
+
+export interface LawDocument {
+  law: {
+    citation: string;
+    titleCs: string;
+    shortTitle?: string | null;
+    year: number;
+    number: string;
+  };
+  snapshot: {
+    seq: number;
+    effectiveFrom: string; // ISO date
+    effectiveTo?: string | null;
+    amendingAct?: string | null;
+  };
+  units: ReaderUnit[]; // top-level units, ordered
+}

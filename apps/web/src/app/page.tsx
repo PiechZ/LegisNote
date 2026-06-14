@@ -1,7 +1,17 @@
+import Link from "next/link";
+
 import { createCaller } from "~/server/routers/_app";
 import { createContext } from "~/server/trpc";
 
 export const dynamic = "force-dynamic";
+
+/** "91/2012 Sb." → "91-2012" (reader route slug). */
+function citationToSlug(citation: string): string {
+  return citation
+    .replace(/\s*Sb\.?\s*$/i, "")
+    .trim()
+    .replace(/\//g, "-");
+}
 
 export default async function Home() {
   const caller = createCaller(createContext());
@@ -36,7 +46,9 @@ export default async function Home() {
         <ul>
           {laws.map((law) => (
             <li key={law.id}>
-              <strong>{law.citation}</strong> — {law.titleCs}
+              <Link href={`/law/${citationToSlug(law.citation)}`}>
+                <strong>{law.citation}</strong> — {law.titleCs}
+              </Link>
             </li>
           ))}
         </ul>

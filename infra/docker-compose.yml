@@ -55,19 +55,31 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-legisnote}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-legisnote}
       AUTH_SECRET: ${AUTH_SECRET:?set in infra/.env}
+      # Bearer token the Python ingestion importer must present (POST /api/import).
+      IMPORTER_TOKEN: ${IMPORTER_TOKEN:?set in infra/.env}
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-legisnote}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
     expose:
       - "3000"
-    # Uncomment when apps/web/Dockerfile is in place:
-    profiles: ["full"]
+    healthcheck:
+      # node:20 ships a global fetch; no curl/wget needed in the slim image.
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   caddy:
     image: caddy:2
     restart: unless-stopped
     depends_on:
-      - web
+      web:
+        condition: service_healthy
+    environment:
+      # Set LEGISNOTE_DOMAIN in infra/.env to your real domain for automatic TLS;
+      # defaults to localhost (plain HTTP) for local runs.
+      LEGISNOTE_DOMAIN: ${LEGISNOTE_DOMAIN:-localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -75,7 +87,6 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./data/caddy:/data
       - ./data/caddy-config:/config
-    profiles: ["full"]
 
   # v2 — full-text search read path (Meilisearch). Disabled by default.
   meilisearch:

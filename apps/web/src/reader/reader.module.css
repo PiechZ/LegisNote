@@ -1,0 +1,64 @@
+.law {
+  display: block;
+}
+
+.header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.citation,
+.meta {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.body {
+  font-size: 1rem;
+}
+
+.unit {
+  margin: 0.4rem 0;
+}
+
+/* Indent nested units (sub-paragraphs, points) under their parent. */
+.children {
+  padding-left: 1.25rem;
+}
+
+.label {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Own text keeps the source's intra-unit line breaks. */
+.text {
+  white-space: pre-line;
+}
+
+/* Structural headings (parts/titles/chapters) read as centered captions. */
+.unit[data-node-type="part"] > .label,
+.unit[data-node-type="title"] > .label,
+.unit[data-node-type="chapter"] > .label {
+  display: block;
+  margin: 1.75rem 0 0.25rem;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* A § gets a prominent inline label that starts its own block. */
+.unit[data-node-type="section"] > .label,
+.unit[data-node-type="paragraph"] > .label {
+  display: block;
+  margin-top: 1.1rem;
+  font-size: 1.05rem;
+}
