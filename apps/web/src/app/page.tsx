@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthStatus } from "~/components/AuthStatus";
 import { createCaller } from "~/server/routers/_app";
 import { createContext } from "~/server/trpc";
 
@@ -14,7 +15,7 @@ function citationToSlug(citation: string): string {
 }
 
 export default async function Home() {
-  const caller = createCaller(createContext());
+  const caller = createCaller(await createContext());
 
   let laws: Awaited<ReturnType<typeof caller.law.list>> = [];
   let dbError: string | null = null;
@@ -26,6 +27,7 @@ export default async function Home() {
 
   return (
     <main>
+      <AuthStatus />
       <h1>LegisNote</h1>
       <p>Study and navigation tool for Czech legislation.</p>
 

@@ -16,7 +16,7 @@ function parseSlug(slug: string): { number: string; year: number } | null {
 export default async function LawPage({ params }: { params: { citation: string } }) {
   const parsed = parseSlug(params.citation);
 
-  const caller = createCaller(createContext());
+  const caller = createCaller(await createContext());
   let doc: Awaited<ReturnType<typeof caller.law.getDocument>> = null;
   let dbError: string | null = null;
   if (parsed) {
