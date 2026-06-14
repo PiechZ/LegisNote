@@ -169,6 +169,12 @@ export default async function LawPage({
             <Link href="/exams" style={{ marginLeft: "0.75rem" }}>
               spravovat zkoušky →
             </Link>
+            <span style={{ marginLeft: "0.75rem" }}>
+              Export:{" "}
+              <a href={`/api/export/${slug}?format=screen${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}`}>PDF (obrazovka)</a>
+              {" · "}
+              <a href={`/api/export/${slug}?format=print${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}`}>PDF (tisk)</a>
+            </span>
           </nav>
 
           <Reader doc={doc} ctx={ctx} />
