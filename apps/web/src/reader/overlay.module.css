@@ -1,0 +1,140 @@
+.overlay {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 999px;
+  line-height: 1.6;
+}
+
+.dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chipX {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0 0 0 0.1rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+}
+.chipX:hover {
+  opacity: 1;
+}
+
+.toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.75;
+  padding: 0.05rem 0.2rem;
+}
+.toggle:hover {
+  opacity: 1;
+}
+
+.manage {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.panel {
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border-radius: 0 6px 6px 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.panel h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.items button {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  text-decoration: underline;
+}
+.items button:hover {
+  opacity: 1;
+}
+
+.kind {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.forms {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed color-mix(in srgb, currentColor 25%, transparent);
+}
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+.form input[type="text"],
+.form input:not([type]),
+.form select,
+.form textarea {
+  font: inherit;
+  padding: 0.2rem 0.35rem;
+}
+.form textarea {
+  flex: 1 1 16rem;
+  resize: vertical;
+}
+
+.error {
+  margin: 0;
+  color: crimson;
+}

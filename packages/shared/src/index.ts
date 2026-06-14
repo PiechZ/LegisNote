@@ -95,6 +95,7 @@ export interface ReaderUnit {
 
 export interface LawDocument {
   law: {
+    id: string;
     citation: string;
     titleCs: string;
     shortTitle?: string | null;
@@ -102,6 +103,7 @@ export interface LawDocument {
     number: string;
   };
   snapshot: {
+    id: string;
     seq: number;
     effectiveFrom: string; // ISO date
     effectiveTo?: string | null;
@@ -109,3 +111,48 @@ export interface LawDocument {
   };
   units: ReaderUnit[]; // top-level units, ordered
 }
+
+/**
+ * Annotation overlay (FR-3/4/5/6), keyed by stable nodeId. The reader merges
+ * this onto the {@link LawDocument} as a decoration layer — the canonical text
+ * is never mutated. v1 exposes the shared/canonical layer only (FR-7).
+ */
+export interface OverlayTag {
+  tagId: string;
+  anchorId: string;
+  name: string;
+  color?: string | null;
+}
+
+export interface OverlayAnnotation {
+  id: string;
+  text: string;
+  authorId?: string | null;
+  createdAt: string;
+}
+
+export interface OverlayComment {
+  id: string;
+  body: string;
+  parentId?: string | null;
+  authorId?: string | null;
+  createdAt: string;
+}
+
+export interface OverlayLink {
+  id: string;
+  direction: "from" | "to"; // "from" = this node is the source
+  kind: string;
+  label?: string | null;
+  otherNodeId: string;
+}
+
+export interface NodeOverlay {
+  tags: OverlayTag[];
+  annotations: OverlayAnnotation[];
+  comments: OverlayComment[];
+  links: OverlayLink[];
+}
+
+/** nodeId → its overlay. Nodes with no overlay are simply absent. */
+export type OverlayByNode = Record<string, NodeOverlay>;

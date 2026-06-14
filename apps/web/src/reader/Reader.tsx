@@ -2,15 +2,15 @@ import type { LawDocument } from "@legisnote/shared";
 
 import { ReaderUnitView } from "./ReaderUnit";
 import styles from "./reader.module.css";
+import type { ReaderOverlayCtx } from "./types";
 
 /**
  * Pure, loader-agnostic renderer for a consolidated law snapshot. Takes a fully
- * resolved {@link LawDocument} (no data fetching here) so the same component can
- * be fed by the tRPC/DB loader or by a static build. Each unit renders with a
- * stable `data-anchor`, the seam future annotation/highlight decorations attach
- * to (architecture §2.2).
+ * resolved {@link LawDocument} plus the overlay context (annotations/tags/
+ * comments/links, FR-3/4/5/6). Each unit renders with a stable `data-anchor`,
+ * the seam the overlay decorations attach to (architecture §2.2).
  */
-export function Reader({ doc }: { doc: LawDocument }) {
+export function Reader({ doc, ctx }: { doc: LawDocument; ctx: ReaderOverlayCtx }) {
   const { law, snapshot, units } = doc;
   return (
     <article className={styles.law}>
@@ -29,7 +29,7 @@ export function Reader({ doc }: { doc: LawDocument }) {
 
       <div className={styles.body}>
         {units.map((unit) => (
-          <ReaderUnitView key={unit.nodeId} unit={unit} depth={0} />
+          <ReaderUnitView key={unit.nodeId} unit={unit} depth={0} ctx={ctx} />
         ))}
       </div>
     </article>

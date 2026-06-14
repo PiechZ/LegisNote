@@ -31,6 +31,15 @@ export default async function Home() {
       <h1>LegisNote</h1>
       <p>Study and navigation tool for Czech legislation.</p>
 
+      <form action="/search" method="get" style={{ display: "flex", gap: "0.5rem", margin: "1rem 0" }}>
+        <input
+          name="q"
+          placeholder="Hledat v zákonech…"
+          style={{ flex: 1, font: "inherit", padding: "0.4rem 0.6rem" }}
+        />
+        <button type="submit">Hledat</button>
+      </form>
+
       <h2>Laws</h2>
       {dbError ? (
         <p>

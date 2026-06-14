@@ -120,6 +120,7 @@ export const lawRouter = router({
 
       return {
         law: {
+          id: law.id,
           citation: law.citation,
           titleCs: law.titleCs,
           shortTitle: law.shortTitle,
@@ -127,6 +128,7 @@ export const lawRouter = router({
           number: law.number,
         },
         snapshot: {
+          id: snapshot.id,
           seq: snapshot.seq,
           effectiveFrom: toIsoDate(snapshot.effectiveFrom),
           effectiveTo: snapshot.effectiveTo ? toIsoDate(snapshot.effectiveTo) : null,

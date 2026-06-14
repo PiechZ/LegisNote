@@ -95,6 +95,7 @@ model Law {
   createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz()
   snapshots         LawSnapshot[]  @relation("LawSnapshots")
   nodes             StructuralNode[]
+  anchors           Anchor[]
 
   @@unique([number, year])
   @@map("law")
@@ -128,6 +129,7 @@ model StructuralNode {
   createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz()
   law                 Law            @relation(fields: [lawId], references: [id], onDelete: Cascade)
   units               SnapshotUnit[]
+  anchors             Anchor[]
 
   @@unique([lawId, nodeKey])
   @@map("structural_node")
@@ -151,4 +153,101 @@ model SnapshotUnit {
 
   @@unique([snapshotId, nodeId])
   @@map("snapshot_unit")
+}
+
+// --- Annotation overlay (FR-3/4/5/6) ----------------------------------------
+// Anchors are the addressable seam; annotations/comments/tags/links attach to
+// them. v1 is the shared/canonical layer (scope=shared, ownerId=NULL); the
+// per-user layer flips on ownerId in v2 (FR-7). Whole-unit anchors have a NULL
+// selector; range/term anchors (selector jsonb) are a later increment.
+
+model Anchor {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lawId               String         @map("law_id") @db.Uuid
+  nodeId              String         @map("node_id") @db.Uuid
+  selector            Json?
+  createdInSnapshotId String?        @map("created_in_snapshot_id") @db.Uuid
+  anchorStatus        AnchorStatus   @default(ok) @map("anchor_status")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  law                 Law            @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  node                StructuralNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  annotations         Annotation[]
+  comments            Comment[]
+  tagAssignments      TagAssignment[]
+  linksFrom           Link[]         @relation("LinkSrc")
+  linksTo             Link[]         @relation("LinkDst")
+
+  @@map("anchor")
+}
+
+model Annotation {
+  id        String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anchorId  String                  @map("anchor_id") @db.Uuid
+  scope     AnnotationScope         @default(shared)
+  ownerId   String?                 @map("owner_id") @db.Uuid
+  authorId  String?                 @map("author_id") @db.Uuid
+  body      Json
+  bodyFts   Unsupported("tsvector")? @map("body_fts")
+  createdAt DateTime                @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime                @default(now()) @map("updated_at") @db.Timestamptz()
+  anchor    Anchor                  @relation(fields: [anchorId], references: [id], onDelete: Cascade)
+
+  @@map("annotation")
+}
+
+model Comment {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anchorId  String          @map("anchor_id") @db.Uuid
+  parentId  String?         @map("parent_id") @db.Uuid
+  scope     AnnotationScope @default(shared)
+  ownerId   String?         @map("owner_id") @db.Uuid
+  authorId  String?         @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  anchor    Anchor          @relation(fields: [anchorId], references: [id], onDelete: Cascade)
+  parent    Comment?        @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]       @relation("CommentThread")
+
+  @@map("comment")
+}
+
+model Tag {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scope       AnnotationScope @default(shared)
+  ownerId     String?         @map("owner_id") @db.Uuid
+  name        String
+  color       String?
+  assignments TagAssignment[]
+
+  @@unique([scope, ownerId, name])
+  @@map("tag")
+}
+
+model TagAssignment {
+  tagId      String   @map("tag_id") @db.Uuid
+  anchorId   String   @map("anchor_id") @db.Uuid
+  assignedBy String?  @map("assigned_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  anchor     Anchor   @relation(fields: [anchorId], references: [id], onDelete: Cascade)
+
+  @@id([tagId, anchorId])
+  @@map("tag_assignment")
+}
+
+model Link {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  srcAnchorId String          @map("src_anchor_id") @db.Uuid
+  dstAnchorId String          @map("dst_anchor_id") @db.Uuid
+  kind        LinkKind        @default(reference)
+  directed    Boolean         @default(true)
+  scope       AnnotationScope @default(shared)
+  ownerId     String?         @map("owner_id") @db.Uuid
+  label       String?
+  metadata    Json            @default("{}")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  src         Anchor          @relation("LinkSrc", fields: [srcAnchorId], references: [id], onDelete: Cascade)
+  dst         Anchor          @relation("LinkDst", fields: [dstAnchorId], references: [id], onDelete: Cascade)
+
+  @@map("link")
 }

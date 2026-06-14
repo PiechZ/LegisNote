@@ -43,6 +43,47 @@
   white-space: pre-line;
 }
 
+/* --- versioning: per-unit change indicator + diff (FR-9/10) --- */
+.change {
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
+}
+.changeBadge {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, orange 22%, transparent);
+  border: 1px solid color-mix(in srgb, orange 45%, transparent);
+}
+.change[data-status="added"] .changeBadge {
+  background: color-mix(in srgb, seagreen 22%, transparent);
+  border-color: color-mix(in srgb, seagreen 45%, transparent);
+}
+.diffDetails {
+  margin-top: 0.25rem;
+}
+.diffDetails summary {
+  cursor: pointer;
+  opacity: 0.75;
+}
+.diffBody {
+  white-space: pre-line;
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border-left: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+}
+.seg_eq {
+  opacity: 0.85;
+}
+.seg_ins {
+  background: color-mix(in srgb, seagreen 30%, transparent);
+  text-decoration: none;
+}
+.seg_del {
+  background: color-mix(in srgb, crimson 28%, transparent);
+  text-decoration: line-through;
+}
+
 /* Structural headings (parts/titles/chapters) read as centered captions. */
 .unit[data-node-type="part"] > .label,
 .unit[data-node-type="title"] > .label,
