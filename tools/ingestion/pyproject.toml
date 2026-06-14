@@ -1,0 +1,38 @@
+[project]
+name = "legisnote-ingest"
+version = "0.1.0"
+description = "LegisNote ingestion: Czech laws -> clean Markdown + manifest (structured-first, PDF fallback)."
+requires-python = ">=3.11"
+dependencies = [
+  "typer>=0.12",
+  "httpx>=0.27",
+  "pydantic>=2.7",
+  "jsonschema>=4.22",
+]
+
+[project.optional-dependencies]
+# PDF-fallback path (D1). Claude structure pass uses the user's own key (D10).
+pdf = ["pymupdf>=1.24", "anthropic>=0.40"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+
+[project.scripts]
+legisnote-ingest = "legisnote_ingest.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["legisnote_ingest*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true

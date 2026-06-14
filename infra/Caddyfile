@@ -1,0 +1,12 @@
+# Replace legisnote.example.com with your real domain.
+# Caddy obtains and renews TLS automatically (D: self-hosted on VPS).
+
+legisnote.example.com {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+# Local development over plain HTTP:
+#   http://localhost {
+#       reverse_proxy web:3000
+#   }

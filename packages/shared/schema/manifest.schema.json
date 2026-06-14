@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://legisnote.dev/schema/manifest.schema.json",
+  "title": "LegisNote ingestion manifest",
+  "description": "The cross-language contract between the Python ingestion tool (producer) and the TypeScript importer (consumer). One manifest describes one consolidated snapshot of one law, alongside its clean.md sibling. See docs/architecture.md §8.",
+  "type": "object",
+  "required": ["manifestVersion", "law", "snapshot", "units"],
+  "additionalProperties": false,
+  "properties": {
+    "manifestVersion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version of this manifest."
+    },
+    "law": { "$ref": "#/$defs/law" },
+    "snapshot": { "$ref": "#/$defs/snapshot" },
+    "source": { "$ref": "#/$defs/source" },
+    "units": {
+      "type": "array",
+      "description": "Ordered tree of structural units (the law body).",
+      "items": { "$ref": "#/$defs/unit" }
+    }
+  },
+  "$defs": {
+    "law": {
+      "type": "object",
+      "required": ["citation", "number", "year", "titleCs"],
+      "additionalProperties": false,
+      "properties": {
+        "citation": { "type": "string", "examples": ["91/2012 Sb."] },
+        "number": { "type": "string", "examples": ["91"] },
+        "year": { "type": "integer", "minimum": 1918 },
+        "titleCs": { "type": "string" },
+        "shortTitle": { "type": ["string", "null"] }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["seq", "effectiveFrom"],
+      "additionalProperties": false,
+      "description": "One consolidated version (D5).",
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "effectiveFrom": { "type": "string", "format": "date" },
+        "effectiveTo": { "type": ["string", "null"], "format": "date" },
+        "amendingAct": { "type": ["string", "null"], "examples": ["zákon č. 285/2023 Sb."] },
+        "amendingMeta": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "Provenance of this conversion (FR-23 cache key inputs).",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["esbirka_json", "lawgpt", "zakonyprolidi", "eurlex", "pdf"]
+        },
+        "url": { "type": ["string", "null"] },
+        "fetchedAt": { "type": ["string", "null"], "format": "date-time" },
+        "rawSha256": { "type": ["string", "null"] },
+        "adapterVersion": { "type": ["string", "null"] },
+        "llmModel": { "type": ["string", "null"], "description": "Set only for the PDF-fallback path (D10)." }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "required": ["nodeKey", "nodeType", "ordinal"],
+      "additionalProperties": false,
+      "properties": {
+        "nodeKey": {
+          "type": "string",
+          "description": "Stable, snapshot-independent identity key (FR-10a). Derived from structured sources or assigned by the parser; carried in the manifest so the importer can match nodes across snapshots."
+        },
+        "nodeType": {
+          "type": "string",
+          "enum": ["law", "part", "title", "chapter", "section", "paragraph", "point", "sentence", "span"]
+        },
+        "label": { "type": ["string", "null"], "examples": ["§ 5", "(2)", "a)", "Část první"] },
+        "ordinal": { "type": "integer", "minimum": 0, "description": "Sort order among siblings." },
+        "text": { "type": ["string", "null"], "description": "Own text, excluding children." },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/unit" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  padding: 2rem clamp(1rem, 5vw, 4rem);
+}
+
+main {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+a {
+  color: inherit;
+}

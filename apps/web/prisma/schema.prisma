@@ -1,0 +1,141 @@
+// LegisNote Prisma schema.
+//
+// IMPORTANT: the AUTHORITATIVE database schema is infra/db/schema.sql (applied by
+// the postgres container on first init). It uses Postgres features Prisma cannot
+// fully express (ltree, generated tsvector columns, citext, custom FTS config).
+//
+// This file is a STARTER mirror so `prisma generate` works and the app type-checks.
+// After `pnpm db:up`, run `pnpm --filter @legisnote/web db:pull` to regenerate the
+// full, exact schema by introspection. Special columns appear as `Unsupported(...)`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NodeType {
+  law
+  part
+  title
+  chapter
+  section
+  paragraph
+  point
+  sentence
+  span
+}
+
+enum AnchorStatus {
+  ok
+  shifted
+  orphaned
+}
+
+enum AnnotationScope {
+  shared
+  personal
+}
+
+enum UserRole {
+  reader
+  editor
+  admin
+}
+
+enum LinkKind {
+  reference
+  cross_law
+  definition
+  related
+  amends
+  see_also
+  custom
+}
+
+model AppUser {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String   @unique // citext in DB
+  displayName     String   @map("display_name")
+  passwordHash    String?  @map("password_hash")
+  role            UserRole @default(reader)
+  anthropicKeyEnc Bytes?   @map("anthropic_key_enc")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("app_user")
+}
+
+model Law {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  citation          String
+  number            String
+  year              Int
+  titleCs           String         @map("title_cs")
+  shortTitle        String?        @map("short_title")
+  sourceKind        String?        @map("source_kind")
+  currentSnapshotId String?        @map("current_snapshot_id") @db.Uuid
+  metadata          Json           @default("{}")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  snapshots         LawSnapshot[]  @relation("LawSnapshots")
+  nodes             StructuralNode[]
+
+  @@unique([number, year])
+  @@map("law")
+}
+
+model LawSnapshot {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lawId         String         @map("law_id") @db.Uuid
+  seq           Int
+  effectiveFrom DateTime       @map("effective_from") @db.Date
+  effectiveTo   DateTime?      @map("effective_to") @db.Date
+  amendingAct   String?        @map("amending_act")
+  amendingMeta  Json           @default("{}") @map("amending_meta")
+  sourceCommit  String?        @map("source_commit")
+  importedAt    DateTime       @default(now()) @map("imported_at") @db.Timestamptz()
+  law           Law            @relation("LawSnapshots", fields: [lawId], references: [id], onDelete: Cascade)
+  units         SnapshotUnit[]
+
+  @@unique([lawId, seq])
+  @@unique([lawId, effectiveFrom])
+  @@map("law_snapshot")
+}
+
+model StructuralNode {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lawId               String         @map("law_id") @db.Uuid
+  nodeType            NodeType       @map("node_type")
+  nodeKey             String?        @map("node_key")
+  firstSeenSnapshotId String?        @map("first_seen_snapshot_id") @db.Uuid
+  supersededByNodeId  String?        @map("superseded_by_node_id") @db.Uuid
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  law                 Law            @relation(fields: [lawId], references: [id], onDelete: Cascade)
+  units               SnapshotUnit[]
+
+  @@unique([lawId, nodeKey])
+  @@map("structural_node")
+}
+
+model SnapshotUnit {
+  id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  snapshotId   String                @map("snapshot_id") @db.Uuid
+  nodeId       String                @map("node_id") @db.Uuid
+  parentUnitId String?               @map("parent_unit_id") @db.Uuid
+  nodeType     NodeType              @map("node_type")
+  label        String?
+  ordinal      Int
+  path         Unsupported("ltree")
+  text         String?
+  textHash     Bytes?                @map("text_hash")
+  fts          Unsupported("tsvector")?
+  metadata     Json                  @default("{}")
+  snapshot     LawSnapshot           @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  node         StructuralNode        @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, nodeId])
+  @@map("snapshot_unit")
+}
