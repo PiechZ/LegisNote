@@ -9,6 +9,8 @@ import { createContext } from "~/server/trpc";
 
 export const dynamic = "force-dynamic";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Slug like "91-2012" ⇄ law (number "91", year 2012). */
 function parseSlug(slug: string): { number: string; year: number } | null {
   const m = /^(.+)-(\d{4})$/.exec(decodeURIComponent(slug));
@@ -43,12 +45,13 @@ export default async function LawPage({
   searchParams,
 }: {
   params: { citation: string };
-  searchParams: { seq?: string; asOf?: string };
+  searchParams: { seq?: string; asOf?: string; exam?: string };
 }) {
   const parsed = parseSlug(params.citation);
   const slug = params.citation;
   const seq = searchParams.seq ? Number(searchParams.seq) : undefined;
   const asOf = searchParams.asOf;
+  const examId = searchParams.exam && UUID_RE.test(searchParams.exam) ? searchParams.exam : null;
 
   const caller = createCaller(await createContext());
   let doc: Awaited<ReturnType<typeof caller.law.getDocument>> = null;
@@ -60,21 +63,34 @@ export default async function LawPage({
     try {
       doc = await caller.law.getDocument({ number: parsed.number, year: parsed.year, seq, asOf });
       if (doc) {
-        const [overlayByNode, change, session] = await Promise.all([
-          caller.overlay.forLaw({ lawId: doc.law.id }),
-          caller.versioning.changeSet({ lawId: doc.law.id, snapshotId: doc.snapshot.id }),
-          auth(),
-        ]);
-        changeSet = change;
+        const session = await auth();
         const role = session?.user?.role;
+        const isEditor = role === "editor" || role === "admin";
+        const isAuthed = Boolean(session?.user);
+        const lawId = doc.law.id;
+
+        const [overlayByNode, change, exams, examHighlightByNode, myHighlightByNode] = await Promise.all([
+          caller.overlay.forLaw({ lawId }),
+          caller.versioning.changeSet({ lawId, snapshotId: doc.snapshot.id }),
+          caller.study.exams(),
+          examId ? caller.study.examHighlightsForLaw({ lawId, examId }) : Promise.resolve({}),
+          isAuthed ? caller.study.myHighlightsForLaw({ lawId }) : Promise.resolve({}),
+        ]);
+
+        changeSet = change;
         const { nodes, labelByNode } = indexNodes(doc.units);
         ctx = {
           overlayByNode,
-          isEditor: role === "editor" || role === "admin",
+          isEditor,
+          isAuthed,
           slug,
           nodes,
           labelByNode,
           changeByNode: change.changeByNode,
+          exams: exams.map((e) => ({ id: e.id, name: e.name })),
+          currentExamId: examId,
+          examHighlightByNode,
+          myHighlightByNode,
         };
       }
     } catch (err) {
@@ -83,6 +99,8 @@ export default async function LawPage({
   }
 
   const hasHistory = (changeSet?.snapshots.length ?? 0) > 1;
+  const currentExam = ctx?.exams.find((e) => e.id === examId) ?? null;
+  const examHitCount = ctx ? Object.keys(ctx.examHighlightByNode).length : 0;
 
   return (
     <main>
@@ -109,18 +127,13 @@ export default async function LawPage({
                 const active = s.id === changeSet!.currentSnapshotId;
                 return (
                   <span key={s.id} style={{ marginRight: "0.75rem" }}>
-                    {active ? (
-                      <strong>{s.effectiveFrom}</strong>
-                    ) : (
-                      <Link href={`/law/${slug}?seq=${s.seq}`}>{s.effectiveFrom}</Link>
-                    )}
+                    {active ? <strong>{s.effectiveFrom}</strong> : <Link href={`/law/${slug}?seq=${s.seq}`}>{s.effectiveFrom}</Link>}
                   </span>
                 );
               })}
               <form method="get" action={`/law/${slug}`} style={{ display: "inline-flex", gap: "0.4rem", marginLeft: "0.5rem" }}>
                 <label>
-                  k datu:{" "}
-                  <input type="date" name="asOf" defaultValue={asOf ?? ""} />
+                  k datu: <input type="date" name="asOf" defaultValue={asOf ?? ""} />
                 </label>
                 <button type="submit">zobrazit</button>
               </form>
@@ -132,6 +145,31 @@ export default async function LawPage({
               ) : null}
             </nav>
           ) : null}
+
+          <nav style={{ margin: "1rem 0", padding: "0.75rem 1rem", border: "1px solid #8884", borderRadius: 8, fontSize: "0.9rem" }}>
+            <form method="get" action={`/law/${slug}`} style={{ display: "inline-flex", gap: "0.4rem", alignItems: "center" }}>
+              <label>
+                <strong>Studijní zvýraznění:</strong>{" "}
+                <select name="exam" defaultValue={examId ?? ""}>
+                  <option value="">— bez filtru —</option>
+                  {ctx.exams.map((ex) => (
+                    <option key={ex.id} value={ex.id}>
+                      {ex.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit">zobrazit</button>
+            </form>
+            {currentExam ? (
+              <span style={{ marginLeft: "0.75rem", opacity: 0.85 }}>
+                Zvýrazněno pro <strong>{currentExam.name}</strong>: {examHitCount} ustanovení v tomto zákoně.
+              </span>
+            ) : null}
+            <Link href="/exams" style={{ marginLeft: "0.75rem" }}>
+              spravovat zkoušky →
+            </Link>
+          </nav>
 
           <Reader doc={doc} ctx={ctx} />
         </>

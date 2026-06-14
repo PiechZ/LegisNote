@@ -2,6 +2,7 @@ import { createCallerFactory, publicProcedure, router } from "../trpc";
 import { lawRouter } from "./law";
 import { overlayRouter } from "./overlay";
 import { searchRouter } from "./search";
+import { studyRouter } from "./study";
 import { versioningRouter } from "./versioning";
 
 export const appRouter = router({
@@ -9,6 +10,7 @@ export const appRouter = router({
   law: lawRouter,
   overlay: overlayRouter,
   search: searchRouter,
+  study: studyRouter,
   versioning: versioningRouter,
 });
 

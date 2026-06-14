@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import type { db as Db } from "../db";
+import { wholeUnitAnchor } from "../anchors";
 import { editorProcedure, publicProcedure, router } from "../trpc";
 
 /**
@@ -12,33 +12,7 @@ import { editorProcedure, publicProcedure, router } from "../trpc";
  * are whole-unit (NULL selector); range/term selectors are a later increment.
  */
 
-type DbClient = typeof Db;
-
 const iso = (d: Date): string => d.toISOString();
-
-/** Find or create the whole-unit (NULL-selector) anchor for a node. */
-async function wholeUnitAnchor(db: DbClient, nodeId: string): Promise<{ id: string }> {
-  const node = await db.structuralNode.findUnique({
-    where: { id: nodeId },
-    select: { id: true, lawId: true, law: { select: { currentSnapshotId: true } } },
-  });
-  if (!node) throw new TRPCError({ code: "NOT_FOUND", message: "Unknown node." });
-
-  const existing = await db.anchor.findFirst({
-    where: { nodeId, selector: { equals: Prisma.DbNull } },
-    select: { id: true },
-  });
-  if (existing) return existing;
-
-  return db.anchor.create({
-    data: {
-      lawId: node.lawId,
-      nodeId,
-      createdInSnapshotId: node.law.currentSnapshotId,
-    },
-    select: { id: true },
-  });
-}
 
 const annotationText = (body: Prisma.JsonValue): string => {
   if (body && typeof body === "object" && !Array.isArray(body)) {

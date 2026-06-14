@@ -138,3 +138,16 @@
   margin: 0;
   color: crimson;
 }
+
+.study {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: flex-start;
+  padding-top: 0.4rem;
+  border-top: 1px dashed color-mix(in srgb, currentColor 25%, transparent);
+}
+.study button {
+  font-size: 0.8rem;
+  cursor: pointer;
+}

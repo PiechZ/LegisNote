@@ -43,6 +43,21 @@
   white-space: pre-line;
 }
 
+/* --- study aids: exam relevance pill (FR-11/13) --- */
+.examPill {
+  display: inline-block;
+  margin: 0.15rem 0;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, royalblue 22%, transparent);
+  border: 1px solid color-mix(in srgb, royalblue 45%, transparent);
+}
+.unit[data-exam-relevant="1"] {
+  border-left: 3px solid color-mix(in srgb, royalblue 60%, transparent);
+  padding-left: 0.5rem;
+}
+
 /* --- versioning: per-unit change indicator + diff (FR-9/10) --- */
 .change {
   margin: 0.2rem 0;

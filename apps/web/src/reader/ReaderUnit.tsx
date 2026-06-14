@@ -19,6 +19,12 @@ export function ReaderUnitView({
   depth: number;
   ctx: ReaderOverlayCtx;
 }) {
+  const examHl = ctx.examHighlightByNode[unit.nodeId];
+  const myHl = ctx.myHighlightByNode[unit.nodeId];
+  const highlightStyle = myHl
+    ? { background: `color-mix(in srgb, ${myHl.color ?? "#ffd54f"} 30%, transparent)` }
+    : undefined;
+
   return (
     <section
       id={unit.nodeId}
@@ -26,8 +32,12 @@ export function ReaderUnitView({
       data-anchor={unit.nodeId}
       data-node-type={unit.nodeType}
       data-depth={depth}
-      style={{ scrollMarginTop: "1rem" }}
+      data-exam-relevant={examHl ? "1" : undefined}
+      style={{ scrollMarginTop: "1rem", ...highlightStyle }}
     >
+      {examHl ? (
+        <span className={styles.examPill}>📌 relevantní pro zkoušku{examHl.note ? `: ${examHl.note}` : ""}</span>
+      ) : null}
       {unit.label ? (
         <span className={styles.label} data-node-type={unit.nodeType}>
           {unit.label}
@@ -67,9 +77,14 @@ export function ReaderUnitView({
         nodeId={unit.nodeId}
         overlay={ctx.overlayByNode[unit.nodeId]}
         isEditor={ctx.isEditor}
+        isAuthed={ctx.isAuthed}
         slug={ctx.slug}
         nodes={ctx.nodes}
         labelByNode={ctx.labelByNode}
+        exams={ctx.exams}
+        currentExamId={ctx.currentExamId}
+        examHl={examHl ? { anchorId: examHl.anchorId } : null}
+        isMine={Boolean(myHl)}
       />
 
       {unit.children.length > 0 ? (

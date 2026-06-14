@@ -14,6 +14,11 @@ import {
   deleteLinkAction,
   removeTagAction,
 } from "~/server/actions/overlay";
+import {
+  addExamHighlightAction,
+  removeExamHighlightAction,
+  toggleMyHighlightAction,
+} from "~/server/actions/study";
 
 import styles from "./overlay.module.css";
 
@@ -25,12 +30,29 @@ interface Props {
   nodeId: string;
   overlay?: NodeOverlay;
   isEditor: boolean;
+  isAuthed: boolean;
   slug: string;
   nodes: { nodeId: string; label: string }[];
   labelByNode: Record<string, string>;
+  exams: { id: string; name: string }[];
+  currentExamId: string | null;
+  examHl: { anchorId: string } | null;
+  isMine: boolean;
 }
 
-export function UnitOverlay({ nodeId, overlay, isEditor, slug, nodes, labelByNode }: Props) {
+export function UnitOverlay({
+  nodeId,
+  overlay,
+  isEditor,
+  isAuthed,
+  slug,
+  nodes,
+  labelByNode,
+  exams,
+  currentExamId,
+  examHl,
+  isMine,
+}: Props) {
   const o = overlay ?? EMPTY;
   const hasContent = o.tags.length + o.annotations.length + o.comments.length + o.links.length > 0;
 
@@ -46,8 +68,10 @@ export function UnitOverlay({ nodeId, overlay, isEditor, slug, nodes, labelByNod
   const [linkDst, setLinkDst] = useState("");
   const [linkKind, setLinkKind] = useState<(typeof LINK_KINDS)[number]>("reference");
   const [linkLabel, setLinkLabel] = useState("");
+  const [examSel, setExamSel] = useState(currentExamId ?? "");
+  const [examNote, setExamNote] = useState("");
 
-  if (!hasContent && !isEditor) return null;
+  if (!hasContent && !isEditor && !isAuthed) return null;
 
   function apply(action: () => Promise<ActionResult>, onSuccess?: () => void) {
     startTransition(async () => {
@@ -218,6 +242,52 @@ export function UnitOverlay({ nodeId, overlay, isEditor, slug, nodes, labelByNod
                 <input placeholder="popis (volitelné)" value={linkLabel} onChange={(e) => setLinkLabel(e.target.value)} />
                 <button type="submit" disabled={pending}>+ odkaz</button>
               </form>
+            </div>
+          ) : null}
+
+          {isAuthed || isEditor ? (
+            <div className={styles.study}>
+              {isAuthed ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => apply(() => toggleMyHighlightAction(slug, nodeId))}
+                >
+                  {isMine ? "★ odebrat moje zvýraznění" : "☆ moje zvýraznění"}
+                </button>
+              ) : null}
+
+              {isEditor && exams.length > 0 ? (
+                <form
+                  className={styles.form}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!examSel) return;
+                    apply(() => addExamHighlightAction(slug, examSel, nodeId, examNote || undefined), () => setExamNote(""));
+                  }}
+                >
+                  <select value={examSel} onChange={(e) => setExamSel(e.target.value)}>
+                    <option value="">— zkouška —</option>
+                    {exams.map((ex) => (
+                      <option key={ex.id} value={ex.id}>
+                        {ex.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input placeholder="poznámka (volitelné)" value={examNote} onChange={(e) => setExamNote(e.target.value)} />
+                  <button type="submit" disabled={pending}>+ označit pro zkoušku</button>
+                </form>
+              ) : null}
+
+              {isEditor && currentExamId && examHl ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => apply(() => removeExamHighlightAction(slug, currentExamId, examHl.anchorId))}
+                >
+                  odebrat z aktuální zkoušky
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>

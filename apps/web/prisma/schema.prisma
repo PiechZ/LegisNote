@@ -176,6 +176,8 @@ model Anchor {
   tagAssignments      TagAssignment[]
   linksFrom           Link[]         @relation("LinkSrc")
   linksTo             Link[]         @relation("LinkDst")
+  examHighlights      ExamHighlight[]
+  userHighlights      UserHighlight[]
 
   @@map("anchor")
 }
@@ -250,4 +252,47 @@ model Link {
   dst         Anchor          @relation("LinkDst", fields: [dstAnchorId], references: [id], onDelete: Cascade)
 
   @@map("link")
+}
+
+// --- Study aids (FR-11/12/13) -----------------------------------------------
+// Exams + admin-curated highlights ("this § appears in Exam X", D9) anchored to
+// stable nodes so they survive amendments. UserHighlight is the personal layer.
+
+model Exam {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdBy   String?         @map("created_by") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  highlights  ExamHighlight[]
+
+  @@map("exam")
+}
+
+model ExamHighlight {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  examId    String   @map("exam_id") @db.Uuid
+  anchorId  String   @map("anchor_id") @db.Uuid
+  note      String?
+  weight    Int?
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  anchor    Anchor   @relation(fields: [anchorId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, anchorId])
+  @@map("exam_highlight")
+}
+
+model UserHighlight {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  anchorId  String   @map("anchor_id") @db.Uuid
+  color     String?
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  anchor    Anchor   @relation(fields: [anchorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, anchorId])
+  @@map("user_highlight")
 }

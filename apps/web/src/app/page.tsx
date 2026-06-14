@@ -40,6 +40,10 @@ export default async function Home() {
         <button type="submit">Hledat</button>
       </form>
 
+      <p>
+        <Link href="/exams">Zkoušky a studijní zvýraznění →</Link>
+      </p>
+
       <h2>Laws</h2>
       {dbError ? (
         <p>
