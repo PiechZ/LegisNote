@@ -27,23 +27,31 @@ enum NodeType {
   point
   sentence
   span
+
+  @@map("node_type")
 }
 
 enum AnchorStatus {
   ok
   shifted
   orphaned
+
+  @@map("anchor_status")
 }
 
 enum AnnotationScope {
   shared
   personal
+
+  @@map("annotation_scope")
 }
 
 enum UserRole {
   reader
   editor
   admin
+
+  @@map("user_role")
 }
 
 enum LinkKind {
@@ -54,6 +62,8 @@ enum LinkKind {
   amends
   see_also
   custom
+
+  @@map("link_kind")
 }
 
 model AppUser {

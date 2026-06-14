@@ -1,11 +1,14 @@
 """LegisNote ingestion CLI.
 
 Examples:
-    # Fetch 91/2012 Sb. from LawGPT.cz (no key needed) and emit md + manifest:
+    # Fetch 91/2012 Sb. from LawGPT.cz (title + date auto-filled from API):
+    legisnote-ingest ingest --citation 91/2012
+
+    # Override title/date fetched from adapter:
     legisnote-ingest ingest --citation 91/2012 \\
         --title "Zákon o mezinárodním právu soukromém" --effective-from 2023-09-23
 
-    # Parse a local file instead of fetching (fully offline):
+    # Parse a local file instead of fetching (title/date required manually):
     legisnote-ingest ingest --citation 91/2012 --title "..." \\
         --effective-from 2023-09-23 --from-file source/raw/91-2012.md
 
@@ -30,8 +33,8 @@ app = typer.Typer(add_completion=False, help="LegisNote ingestion pipeline.")
 @app.command()
 def ingest(
     citation: str = typer.Option(..., help="Law citation, e.g. '91/2012'."),
-    title: str = typer.Option(..., "--title", help="Czech title of the law."),
-    effective_from: str = typer.Option(..., help="Snapshot effective date (YYYY-MM-DD)."),
+    title: str | None = typer.Option(None, "--title", help="Czech title (auto-filled from adapter if omitted)."),
+    effective_from: str | None = typer.Option(None, help="Snapshot effective date YYYY-MM-DD (auto-filled from adapter if omitted)."),
     source: str = typer.Option("lawgpt", help="Source adapter: 'lawgpt' or 'pdf'."),
     from_file: Path | None = typer.Option(None, help="Parse this local text/MD/PDF file instead of fetching."),
     short_title: str | None = typer.Option(None, help="Optional short title."),
@@ -43,11 +46,30 @@ def ingest(
     ref = LawRef.parse(citation)
     doc = _acquire(ref, source=source, from_file=from_file, use_llm=use_llm)
 
+    resolved_title = title or doc.meta.get("title")
+    resolved_effective_from = effective_from or doc.meta.get("effectiveFrom")
+
+    if not resolved_title:
+        raise typer.BadParameter(
+            "Could not determine title from the adapter. Pass --title explicitly.",
+            param_hint="'--title'",
+        )
+    if not resolved_effective_from:
+        raise typer.BadParameter(
+            "Could not determine effective date from the adapter. Pass --effective-from explicitly.",
+            param_hint="'--effective-from'",
+        )
+
+    if not title and doc.meta.get("title"):
+        typer.echo(f"[auto] title        : {resolved_title}")
+    if not effective_from and doc.meta.get("effectiveFrom"):
+        typer.echo(f"[auto] effective-from: {resolved_effective_from}")
+
     md_path, manifest_path = build_outputs(
         ref=ref,
         doc=doc,
-        title_cs=title,
-        effective_from=effective_from,
+        title_cs=resolved_title,
+        effective_from=resolved_effective_from,
         short_title=short_title,
         amending_act=amending_act,
         seq=seq,

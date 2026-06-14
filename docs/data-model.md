@@ -134,12 +134,14 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy match / re-anchoring
 CREATE EXTENSION IF NOT EXISTS unaccent;     -- diacritics-insensitive FTS
 CREATE EXTENSION IF NOT EXISTS ltree;        -- ordered tree paths per snapshot
 
--- Czech FTS config built on the simple/snowball stemmer + unaccent.
--- (Created once; 'czech' snowball dictionary ships with Postgres.)
-CREATE TEXT SEARCH CONFIGURATION cs_unaccent ( COPY = czech );
+-- Czech FTS config. NOTE: Postgres ships NO 'czech' snowball stemmer, so we base
+-- the config on 'simple' + unaccent (diacritics-insensitive, case-folded). A
+-- hunspell cs_CZ stemmer can replace the final 'simple' dictionary later for
+-- better recall. (Verified against postgres:16 — see infra/db/schema.sql.)
+CREATE TEXT SEARCH CONFIGURATION cs_unaccent ( COPY = simple );
 ALTER TEXT SEARCH CONFIGURATION cs_unaccent
   ALTER MAPPING FOR hword, hword_part, word
-  WITH unaccent, czech_stem;
+  WITH unaccent, simple;
 
 CREATE TYPE node_type      AS ENUM
   ('law','part','title','chapter','section','paragraph','point','sentence','span');

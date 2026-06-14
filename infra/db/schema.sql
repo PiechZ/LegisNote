@@ -12,16 +12,20 @@ CREATE EXTENSION IF NOT EXISTS unaccent;   -- diacritics-insensitive FTS
 CREATE EXTENSION IF NOT EXISTS ltree;      -- ordered tree paths per snapshot
 CREATE EXTENSION IF NOT EXISTS citext;     -- case-insensitive email
 
--- Czech FTS config: snowball 'czech' stemmer + unaccent.
--- to_tsvector('cs_unaccent', ...) with a *constant* config is immutable, so it
+-- Czech FTS config. NOTE: PostgreSQL does NOT ship a 'czech' snowball stemmer
+-- (only ~16 languages; Czech is not one). We base the config on 'simple' +
+-- 'unaccent', giving diacritics-insensitive, case-folded matching that works
+-- well for legal vocabulary. A proper Czech stemmer (hunspell cs_CZ) can be
+-- dropped in later by swapping the final dictionary.
+-- to_tsvector('cs_unaccent', ...) with a *constant* config is IMMUTABLE, so it
 -- is usable in the generated column and GIN index below.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_ts_config WHERE cfgname = 'cs_unaccent') THEN
-    CREATE TEXT SEARCH CONFIGURATION cs_unaccent ( COPY = czech );
+    CREATE TEXT SEARCH CONFIGURATION cs_unaccent ( COPY = simple );
     ALTER TEXT SEARCH CONFIGURATION cs_unaccent
       ALTER MAPPING FOR hword, hword_part, word
-      WITH unaccent, czech_stem;
+      WITH unaccent, simple;
   END IF;
 END$$;
 

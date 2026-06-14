@@ -26,6 +26,6 @@ def import_manifest(manifest_path: Path, *, url: str | None = None, token: str |
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    resp = httpx.post(url, json=payload, headers=headers, timeout=60.0)
+    resp = httpx.post(url, json=payload, headers=headers, timeout=300.0)
     resp.raise_for_status()
     return resp.status_code
