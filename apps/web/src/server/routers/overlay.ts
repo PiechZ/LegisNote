@@ -1,18 +1,37 @@
-import type { NodeOverlay, OverlayByNode } from "@legisnote/shared";
+import type { NodeOverlay, OverlayByNode, RangeDeco, RangesByNode, RangeSelector } from "@legisnote/shared";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { wholeUnitAnchor } from "../anchors";
+import { rangeAnchor, wholeUnitAnchor } from "../anchors";
 import { editorProcedure, publicProcedure, router } from "../trpc";
 
 /**
  * Annotation overlay (FR-3/4/5/6). Reads are public (the shared/canonical layer
- * is visible to everyone, FR-7); writes require Editor/Admin. All anchors in v1
- * are whole-unit (NULL selector); range/term selectors are a later increment.
+ * is visible to everyone, FR-7); writes require Editor/Admin. Anchors are either
+ * whole-unit (NULL selector) or range/term (selector = {start,end,quote}).
  */
 
 const iso = (d: Date): string => d.toISOString();
+
+const selectorSchema = z
+  .object({ start: z.number().int().min(0), end: z.number().int(), quote: z.string().min(1).max(2000) })
+  .refine((s) => s.end > s.start, { message: "end must be > start" });
+
+/** Pick the anchor: range when a selector is given, else whole-unit. */
+async function anchorFor(db: typeof import("../db").db, nodeId: string, selector?: RangeSelector) {
+  return selector ? rangeAnchor(db, nodeId, selector) : wholeUnitAnchor(db, nodeId);
+}
+
+const asSelector = (j: Prisma.JsonValue | null): RangeSelector | null => {
+  if (j && typeof j === "object" && !Array.isArray(j)) {
+    const o = j as Record<string, unknown>;
+    if (typeof o.start === "number" && typeof o.end === "number") {
+      return { start: o.start, end: o.end, quote: typeof o.quote === "string" ? o.quote : "" };
+    }
+  }
+  return null;
+};
 
 const annotationText = (body: Prisma.JsonValue): string => {
   if (body && typeof body === "object" && !Array.isArray(body)) {
@@ -63,6 +82,44 @@ export const overlayRouter = router({
       return byNode;
     }),
 
+  /**
+   * Inline range decorations per node (FR-3/4 word-level): shared tags +
+   * annotations on range anchors, plus the viewer's own range highlights.
+   */
+  rangesForLaw: publicProcedure
+    .input(z.object({ lawId: z.string().uuid() }))
+    .query(async ({ ctx, input }): Promise<RangesByNode> => {
+      const userId = ctx.session?.user?.id ?? null;
+      const anchors = await ctx.db.anchor.findMany({
+        where: { lawId: input.lawId, NOT: { selector: { equals: Prisma.DbNull } } },
+        include: {
+          tagAssignments: { include: { tag: true } },
+          annotations: true,
+          userHighlights: true,
+        },
+      });
+
+      const byNode: RangesByNode = {};
+      const push = (nodeId: string, d: RangeDeco) => (byNode[nodeId] ??= []).push(d);
+
+      for (const a of anchors) {
+        const sel = asSelector(a.selector);
+        if (!sel) continue;
+        for (const ta of a.tagAssignments) {
+          push(a.nodeId, { anchorId: a.id, start: sel.start, end: sel.end, kind: "tag", label: ta.tag.name, color: ta.tag.color, tagId: ta.tag.id });
+        }
+        for (const an of a.annotations) {
+          push(a.nodeId, { anchorId: a.id, start: sel.start, end: sel.end, kind: "annotation", label: annotationText(an.body), color: null, itemId: an.id });
+        }
+        if (userId) {
+          for (const uh of a.userHighlights.filter((h) => h.userId === userId)) {
+            push(a.nodeId, { anchorId: a.id, start: sel.start, end: sel.end, kind: "highlight", label: null, color: uh.color, itemId: uh.id, mine: true });
+          }
+        }
+      }
+      return byNode;
+    }),
+
   /** Shared tag catalog (for the add-tag UI). */
   tagCatalog: publicProcedure.query(({ ctx }) =>
     ctx.db.tag.findMany({
@@ -74,9 +131,16 @@ export const overlayRouter = router({
 
   // --- writes (Editor/Admin, shared layer) ---------------------------------
   addTag: editorProcedure
-    .input(z.object({ nodeId: z.string().uuid(), name: z.string().trim().min(1).max(64), color: z.string().max(32).optional() }))
+    .input(
+      z.object({
+        nodeId: z.string().uuid(),
+        name: z.string().trim().min(1).max(64),
+        color: z.string().max(32).optional(),
+        selector: selectorSchema.optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const anchor = await wholeUnitAnchor(ctx.db, input.nodeId);
+      const anchor = await anchorFor(ctx.db, input.nodeId, input.selector);
       let tag = await ctx.db.tag.findFirst({ where: { scope: "shared", ownerId: null, name: input.name } });
       tag ??= await ctx.db.tag.create({ data: { scope: "shared", name: input.name, color: input.color ?? null } });
       await ctx.db.tagAssignment.upsert({
@@ -95,9 +159,9 @@ export const overlayRouter = router({
     }),
 
   addAnnotation: editorProcedure
-    .input(z.object({ nodeId: z.string().uuid(), text: z.string().trim().min(1).max(10000) }))
+    .input(z.object({ nodeId: z.string().uuid(), text: z.string().trim().min(1).max(10000), selector: selectorSchema.optional() }))
     .mutation(async ({ ctx, input }) => {
-      const anchor = await wholeUnitAnchor(ctx.db, input.nodeId);
+      const anchor = await anchorFor(ctx.db, input.nodeId, input.selector);
       await ctx.db.annotation.create({ data: { anchorId: anchor.id, body: { text: input.text }, authorId: ctx.user.id } });
       return { ok: true };
     }),

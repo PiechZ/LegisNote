@@ -1,5 +1,6 @@
 "use server";
 
+import type { RangeSelector } from "@legisnote/shared";
 import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
 
@@ -47,4 +48,17 @@ export async function removeExamHighlightAction(slug: string, examId: string, an
 
 export async function toggleMyHighlightAction(slug: string, nodeId: string): Promise<ActionResult> {
   return run(slug, (c) => c.study.toggleMyHighlight({ nodeId }));
+}
+
+export async function addHighlightAction(
+  slug: string,
+  nodeId: string,
+  selector?: RangeSelector,
+  color?: string,
+): Promise<ActionResult> {
+  return run(slug, (c) => c.study.addHighlight({ nodeId, selector, color: color || undefined }));
+}
+
+export async function removeHighlightAction(slug: string, anchorId: string): Promise<ActionResult> {
+  return run(slug, (c) => c.study.removeHighlight({ anchorId }));
 }

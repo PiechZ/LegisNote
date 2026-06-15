@@ -3,6 +3,7 @@ import type { ReaderUnit } from "@legisnote/shared";
 import styles from "./reader.module.css";
 import type { ReaderOverlayCtx } from "./types";
 import { UnitOverlay } from "./UnitOverlay";
+import { UnitText } from "./UnitText";
 
 /**
  * Recursively renders one structural unit and its children. The wrapper carries
@@ -71,7 +72,18 @@ export function ReaderUnitView({
         );
       })()}
 
-      {unit.text ? <div className={styles.text}>{unit.text}</div> : null}
+      {unit.text ? (
+        <div className={styles.text}>
+          <UnitText
+            nodeId={unit.nodeId}
+            text={unit.text}
+            slug={ctx.slug}
+            isEditor={ctx.isEditor}
+            isAuthed={ctx.isAuthed}
+            ranges={ctx.rangesByNode[unit.nodeId] ?? []}
+          />
+        </div>
+      ) : null}
 
       <UnitOverlay
         nodeId={unit.nodeId}

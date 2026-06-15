@@ -1,7 +1,11 @@
 import { z } from "zod";
 
-import { wholeUnitAnchor } from "../anchors";
+import { rangeAnchor, wholeUnitAnchor } from "../anchors";
 import { editorProcedure, protectedProcedure, publicProcedure, router } from "../trpc";
+
+const selectorSchema = z
+  .object({ start: z.number().int().min(0), end: z.number().int(), quote: z.string().min(1).max(2000) })
+  .refine((s) => s.end > s.start, { message: "end must be > start" });
 
 /**
  * Study aids (FR-11/12/13). Exams + admin-curated exam highlights are the shared
@@ -107,5 +111,27 @@ export const studyRouter = router({
       }
       await ctx.db.userHighlight.create({ data: { userId: ctx.user.id, anchorId: anchor.id, color: input.color ?? "#ffd54f" } });
       return { highlighted: true };
+    }),
+
+  /** Add a personal highlight on a whole unit or a selected range (FR-12). */
+  addHighlight: protectedProcedure
+    .input(z.object({ nodeId: z.string().uuid(), selector: selectorSchema.optional(), color: z.string().max(32).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const anchor = input.selector
+        ? await rangeAnchor(ctx.db, input.nodeId, input.selector)
+        : await wholeUnitAnchor(ctx.db, input.nodeId);
+      await ctx.db.userHighlight.upsert({
+        where: { userId_anchorId: { userId: ctx.user.id, anchorId: anchor.id } },
+        update: { color: input.color ?? undefined },
+        create: { userId: ctx.user.id, anchorId: anchor.id, color: input.color ?? "#ffd54f" },
+      });
+      return { ok: true };
+    }),
+
+  removeHighlight: protectedProcedure
+    .input(z.object({ anchorId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.userHighlight.deleteMany({ where: { userId: ctx.user.id, anchorId: input.anchorId } });
+      return { ok: true };
     }),
 });

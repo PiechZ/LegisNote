@@ -156,3 +156,30 @@ export interface NodeOverlay {
 
 /** nodeId → its overlay. Nodes with no overlay are simply absent. */
 export type OverlayByNode = Record<string, NodeOverlay>;
+
+/**
+ * Range/term anchoring within a single unit's text (FR-3/4 word-level). Offsets
+ * index the unit's `text`; `quote` is the literal substring (self-healing seam
+ * for re-anchoring across snapshots). A NULL selector = whole-unit anchor.
+ */
+export interface RangeSelector {
+  start: number;
+  end: number;
+  quote: string;
+}
+
+/** One inline decoration to render within a unit's text. */
+export interface RangeDeco {
+  anchorId: string;
+  start: number;
+  end: number;
+  kind: "tag" | "annotation" | "highlight";
+  label: string | null; // tag name / note text / null
+  color: string | null;
+  tagId?: string | null; // removal handle for tags
+  itemId?: string | null; // annotation id / personal-highlight id
+  mine?: boolean; // personal highlight owned by the viewer
+}
+
+/** nodeId → inline range decorations. */
+export type RangesByNode = Record<string, RangeDeco[]>;

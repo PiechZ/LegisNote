@@ -1,5 +1,6 @@
 "use server";
 
+import type { RangeSelector } from "@legisnote/shared";
 import { TRPCError } from "@trpc/server";
 import { revalidatePath } from "next/cache";
 
@@ -35,16 +36,27 @@ async function getCaller() {
   return createCaller(await createContext());
 }
 
-export async function addTagAction(slug: string, nodeId: string, name: string, color?: string): Promise<ActionResult> {
-  return run(slug, (c) => c.overlay.addTag({ nodeId, name, color: color || undefined }));
+export async function addTagAction(
+  slug: string,
+  nodeId: string,
+  name: string,
+  color?: string,
+  selector?: RangeSelector,
+): Promise<ActionResult> {
+  return run(slug, (c) => c.overlay.addTag({ nodeId, name, color: color || undefined, selector }));
 }
 
 export async function removeTagAction(slug: string, tagId: string, anchorId: string): Promise<ActionResult> {
   return run(slug, (c) => c.overlay.removeTag({ tagId, anchorId }));
 }
 
-export async function addAnnotationAction(slug: string, nodeId: string, text: string): Promise<ActionResult> {
-  return run(slug, (c) => c.overlay.addAnnotation({ nodeId, text }));
+export async function addAnnotationAction(
+  slug: string,
+  nodeId: string,
+  text: string,
+  selector?: RangeSelector,
+): Promise<ActionResult> {
+  return run(slug, (c) => c.overlay.addAnnotation({ nodeId, text, selector }));
 }
 
 export async function deleteAnnotationAction(slug: string, id: string): Promise<ActionResult> {

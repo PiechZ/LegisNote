@@ -1,0 +1,76 @@
+.wrap {
+  position: relative;
+}
+
+.text {
+  display: block;
+  white-space: pre-line;
+}
+
+.deco {
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.deco:hover {
+  filter: brightness(1.1);
+  outline: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+}
+
+/* Floating selection toolbar + decoration popover (viewport-positioned). */
+.toolbar,
+.popover {
+  position: fixed;
+  z-index: 50;
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+  padding: 0.35rem;
+  border-radius: 10px;
+  background: Canvas;
+  color: CanvasText;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+}
+
+.toolbar button,
+.popover button {
+  font: inherit;
+  cursor: pointer;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+.toolbar button:hover,
+.popover button:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.toolbar form {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+.toolbar input {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.hint {
+  opacity: 0.7;
+  padding: 0 0.3rem;
+}
+.popLabel {
+  padding: 0 0.4rem;
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.close {
+  padding: 0.2rem 0.5rem !important;
+}

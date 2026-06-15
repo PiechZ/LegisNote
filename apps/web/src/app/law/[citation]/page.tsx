@@ -69,8 +69,9 @@ export default async function LawPage({
         const isAuthed = Boolean(session?.user);
         const lawId = doc.law.id;
 
-        const [overlayByNode, change, exams, examHighlightByNode, myHighlightByNode] = await Promise.all([
+        const [overlayByNode, rangesByNode, change, exams, examHighlightByNode, myHighlightByNode] = await Promise.all([
           caller.overlay.forLaw({ lawId }),
+          caller.overlay.rangesForLaw({ lawId }),
           caller.versioning.changeSet({ lawId, snapshotId: doc.snapshot.id }),
           caller.study.exams(),
           examId ? caller.study.examHighlightsForLaw({ lawId, examId }) : Promise.resolve({}),
@@ -91,6 +92,7 @@ export default async function LawPage({
           currentExamId: examId,
           examHighlightByNode,
           myHighlightByNode,
+          rangesByNode,
         };
       }
     } catch (err) {

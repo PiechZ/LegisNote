@@ -1,4 +1,4 @@
-import type { OverlayByNode } from "@legisnote/shared";
+import type { OverlayByNode, RangesByNode } from "@legisnote/shared";
 
 import type { ExamHighlightInfo, UserHighlightInfo } from "~/server/routers/study";
 import type { NodeChange } from "~/server/routers/versioning";
@@ -20,4 +20,6 @@ export interface ReaderOverlayCtx {
   currentExamId: string | null;
   examHighlightByNode: Record<string, ExamHighlightInfo>;
   myHighlightByNode: Record<string, UserHighlightInfo>;
+  /** Inline word/range decorations per node (FR-3/4 word-level). */
+  rangesByNode: RangesByNode;
 }
