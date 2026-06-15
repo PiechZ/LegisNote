@@ -10,6 +10,53 @@ demand and POSTs to the web app's importer. Meilisearch is v2 (disabled by defau
 
 ---
 
+## 0. Local quickstart (try it on your machine)
+
+For a local run you don't need a domain, TLS, secrets, or an `.env` file. A
+separate **zero-config** stack (`infra/docker-compose.local.yml`) runs just
+Postgres + the web app, bound to `127.0.0.1`, with safe dev defaults baked in.
+
+**Prerequisite:** Docker Desktop (or Docker Engine + Compose) running.
+
+```bash
+cd infra
+./local-up.sh        # builds, starts, applies migrations, seeds an admin user
+```
+
+Then open **http://localhost:3000** and log in with `admin@legisnote.local` /
+`admin12345` (override via `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars). The script
+is idempotent — re-run it any time.
+
+PowerShell (no bash) equivalent of the script's core steps:
+
+```powershell
+cd infra
+docker compose -f docker-compose.local.yml up -d --build --wait
+# schema.sql is applied automatically on the empty volume; this migration is a
+# no-op on a fresh DB and required only for a pre-existing one (FR-16/17 column):
+Get-Content db/migrations/001_publish_gate.sql | `
+  docker compose -f docker-compose.local.yml exec -T postgres psql -U legisnote -d legisnote
+docker compose -f docker-compose.local.yml exec -T -w /repo/apps/web web `
+  node scripts/create-user.mjs admin@legisnote.local admin12345 admin Admin
+```
+
+Import the PoC law and publish it (FR-16/17): see the script's printed next-steps,
+or §"Importing a law" below using `LEGISNOTE_IMPORTER_TOKEN=dev-importer-token` and
+`LEGISNOTE_IMPORTER_URL=http://localhost:3000/api/import`.
+
+Manage the local stack:
+
+```bash
+docker compose -f docker-compose.local.yml logs -f web   # logs
+docker compose -f docker-compose.local.yml down          # stop
+docker compose -f docker-compose.local.yml down && rm -rf data/postgres-local   # reset DB
+```
+
+> The local stack uses throwaway credentials and no TLS — never expose it publicly.
+> For a real deployment use the production compose + `infra/.env` (§1 onward).
+
+---
+
 ## 1. Prerequisites (on the VPS)
 
 - A Linux VPS (Docker's supported x86_64/arm64) with **Docker Engine + the Compose plugin**
@@ -98,10 +145,17 @@ directory. Editing it does **not** migrate an existing database. For v1 the opti
   rm -rf data/postgres        # DESTROYS all data
   ./deploy.sh
   ```
-- **Preserving data:** apply the change as a manual SQL migration:
+- **Preserving data:** apply the change as a manual SQL migration. Hand-written,
+  idempotent migrations live in `infra/db/migrations/`; run the ones not yet applied:
   ```bash
-  docker compose exec -T postgres psql -U legisnote -d legisnote < your-migration.sql
+  docker compose exec -T postgres psql -U legisnote -d legisnote \
+    < db/migrations/001_publish_gate.sql
   ```
+
+  > **001_publish_gate.sql** is required by the editorial workflow (FR-16/17): it adds
+  > `law_snapshot.status` (`draft`/`published`). Without it the app errors on any law
+  > page (the query selects `status`). Existing snapshots are backfilled to `published`
+  > so currently-rendering laws keep rendering; new imports land as `draft`.
 
 > Adopting **Prisma Migrate** (`apps/web/prisma/migrations`) as the single migration
 > path is the recommended v1.1 follow-up; until then, keep `db/schema.sql` and any

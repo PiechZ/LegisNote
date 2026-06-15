@@ -35,6 +35,7 @@ END$$;
 CREATE TYPE node_type        AS ENUM
   ('law','part','title','chapter','section','paragraph','point','sentence','span');
 CREATE TYPE anchor_status    AS ENUM ('ok','shifted','orphaned');
+CREATE TYPE snapshot_status  AS ENUM ('draft','published');  -- editorial gate (FR-16/17)
 CREATE TYPE target_kind      AS ENUM ('node','snapshot_unit','range','law');
 CREATE TYPE annotation_scope AS ENUM ('shared','personal');   -- v1 uses 'shared'
 CREATE TYPE user_role        AS ENUM ('reader','editor','admin');
@@ -82,6 +83,7 @@ CREATE TABLE law_snapshot (
   amending_act    text,                 -- e.g. "zákon č. 285/2023 Sb." (metadata only, D5)
   amending_meta   jsonb NOT NULL DEFAULT '{}',  -- promulgation date, source refs (FR-26)
   source_commit   text,                 -- git commit of the Markdown backup (D6)
+  status          snapshot_status NOT NULL DEFAULT 'draft',  -- import lands as draft; editor publishes (FR-17)
   imported_at     timestamptz NOT NULL DEFAULT now(),
   UNIQUE (law_id, seq),
   UNIQUE (law_id, effective_from)

@@ -49,6 +49,13 @@ enum AnnotationScope {
   @@map("annotation_scope")
 }
 
+enum SnapshotStatus {
+  draft
+  published
+
+  @@map("snapshot_status")
+}
+
 enum UserRole {
   reader
   editor
@@ -110,6 +117,7 @@ model LawSnapshot {
   amendingAct   String?        @map("amending_act")
   amendingMeta  Json           @default("{}") @map("amending_meta")
   sourceCommit  String?        @map("source_commit")
+  status        SnapshotStatus @default(draft)
   importedAt    DateTime       @default(now()) @map("imported_at") @db.Timestamptz()
   law           Law            @relation("LawSnapshots", fields: [lawId], references: [id], onDelete: Cascade)
   units         SnapshotUnit[]

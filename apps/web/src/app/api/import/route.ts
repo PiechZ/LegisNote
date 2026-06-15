@@ -17,7 +17,11 @@ import { db } from "~/server/db";
  *   3. for each manifest unit, match the stable structural_node by (law_id, node_key)
  *      — reuse if present (carry-forward across amendments, FR-10a), else create
  *   4. insert snapshot_units (ltree path + sha256 text_hash) in pre-order
- *   5. point law.current_snapshot_id at this snapshot (D5)
+ *
+ * The snapshot lands as a DRAFT (FR-16/17): import never publishes. An editor
+ * cleans up the parsed text in /law/[citation]/edit and then publishes, which
+ * is what points law.current_snapshot_id at the snapshot (D5). Re-importing an
+ * already-published snapshot preserves its status (the upsert leaves it alone).
  *
  * Re-importing the same (law, seq) is idempotent: nodes are matched by node_key
  * and units are replaced.
@@ -36,6 +40,7 @@ function textHash(text?: string | null): Buffer {
 interface ImportSummary {
   lawId: string;
   snapshotId: string;
+  status: "draft" | "published";
   nodesCreated: number;
   nodesMatched: number;
   unitsInserted: number;
@@ -107,12 +112,17 @@ async function importManifest(manifest: Manifest): Promise<ImportSummary> {
           effectiveTo: snapshot.effectiveTo ? new Date(snapshot.effectiveTo) : null,
           amendingAct: snapshot.amendingAct ?? null,
           amendingMeta: (snapshot.amendingMeta ?? {}) as Prisma.InputJsonValue,
+          sourceCommit: source?.commit ?? null, // git backup SHA (FR-24)
+          status: "draft", // editorial gate: never auto-publish (FR-17)
         },
         update: {
+          // status intentionally untouched: a re-import keeps a published
+          // snapshot published and a draft a draft.
           effectiveFrom: new Date(snapshot.effectiveFrom),
           effectiveTo: snapshot.effectiveTo ? new Date(snapshot.effectiveTo) : null,
           amendingAct: snapshot.amendingAct ?? null,
           amendingMeta: (snapshot.amendingMeta ?? {}) as Prisma.InputJsonValue,
+          sourceCommit: source?.commit ?? null, // git backup SHA (FR-24)
         },
       });
 
@@ -175,14 +185,13 @@ async function importManifest(manifest: Manifest): Promise<ImportSummary> {
 
       await insertTree(units, null, "");
 
-      await tx.law.update({
-        where: { id: lawRow.id },
-        data: { currentSnapshotId: snap.id },
-      });
+      // NB: law.current_snapshot_id is NOT set here — publishing does that
+      // (editorial.publishSnapshot). Import only ever produces draft content.
 
       return {
         lawId: lawRow.id,
         snapshotId: snap.id,
+        status: snap.status,
         nodesCreated,
         nodesMatched,
         unitsInserted,

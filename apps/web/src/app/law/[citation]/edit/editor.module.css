@@ -1,0 +1,96 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0.6rem 0.85rem;
+  margin: 0.5rem 0 1rem;
+  border: 1px solid #8884;
+  border-radius: 8px;
+  background: var(--panel-bg, #ffffffee);
+  backdrop-filter: blur(4px);
+}
+
+.badgeDraft,
+.badgePublished {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+}
+.badgeDraft {
+  background: #f59e0b22;
+  color: #b45309;
+  border: 1px solid #f59e0b66;
+}
+.badgePublished {
+  background: #16a34a22;
+  color: #15803d;
+  border: 1px solid #16a34a66;
+}
+
+.meta {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.publish {
+  font-weight: 600;
+}
+
+.note {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #f59e0b;
+  background: #f59e0b14;
+  border-radius: 4px;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.row {
+  padding: 0.15rem 0;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 0.15rem;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.textarea {
+  width: 100%;
+  font: inherit;
+  line-height: 1.5;
+  padding: 0.45rem 0.6rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.unitActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dirtyDot {
+  font-size: 0.8rem;
+  color: #b45309;
+}

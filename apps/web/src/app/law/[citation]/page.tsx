@@ -53,20 +53,25 @@ export default async function LawPage({
   const asOf = searchParams.asOf;
   const examId = searchParams.exam && UUID_RE.test(searchParams.exam) ? searchParams.exam : null;
 
+  const session = await auth();
+  const role = session?.user?.role;
+  const isEditor = role === "editor" || role === "admin";
+  const isAuthed = Boolean(session?.user);
+
   const caller = createCaller(await createContext());
   let doc: Awaited<ReturnType<typeof caller.law.getDocument>> = null;
   let ctx: ReaderOverlayCtx | null = null;
   let changeSet: Awaited<ReturnType<typeof caller.versioning.changeSet>> | null = null;
+  let editorial: Awaited<ReturnType<typeof caller.editorial.snapshots>> = null;
   let dbError: string | null = null;
 
   if (parsed) {
     try {
       doc = await caller.law.getDocument({ number: parsed.number, year: parsed.year, seq, asOf });
+      if (isEditor) {
+        editorial = await caller.editorial.snapshots({ number: parsed.number, year: parsed.year });
+      }
       if (doc) {
-        const session = await auth();
-        const role = session?.user?.role;
-        const isEditor = role === "editor" || role === "admin";
-        const isAuthed = Boolean(session?.user);
         const lawId = doc.law.id;
 
         const [overlayByNode, rangesByNode, change, exams, examHighlightByNode, myHighlightByNode] = await Promise.all([
@@ -103,12 +108,35 @@ export default async function LawPage({
   const hasHistory = (changeSet?.snapshots.length ?? 0) > 1;
   const currentExam = ctx?.exams.find((e) => e.id === examId) ?? null;
   const examHitCount = ctx ? Object.keys(ctx.examHighlightByNode).length : 0;
+  const draftCount = editorial?.snapshots.filter((s) => s.status === "draft").length ?? 0;
+  const viewingDraft = doc?.snapshot.status === "draft";
 
   return (
     <main>
       <p>
         <Link href="/">← Zpět na seznam zákonů</Link>
       </p>
+
+      {isEditor && parsed && editorial ? (
+        <nav style={{ margin: "0.75rem 0", padding: "0.6rem 0.85rem", border: "1px solid #6366f155", background: "#6366f114", borderRadius: 8, fontSize: "0.9rem", display: "flex", gap: "0.85rem", alignItems: "center", flexWrap: "wrap" }}>
+          <strong>Editor</strong>
+          <Link href={`/law/${slug}/edit`}>upravit text / publikovat →</Link>
+          {draftCount > 0 ? (
+            <span style={{ color: "#b45309" }}>
+              {draftCount} {draftCount === 1 ? "nepublikovaný koncept" : "nepublikovaná znění (koncepty)"}
+            </span>
+          ) : (
+            <span style={{ opacity: 0.7 }}>žádné koncepty</span>
+          )}
+        </nav>
+      ) : null}
+
+      {viewingDraft ? (
+        <p style={{ margin: "0.75rem 0", padding: "0.6rem 0.85rem", border: "1px solid #f59e0b66", background: "#f59e0b18", borderRadius: 8, fontSize: "0.9rem" }}>
+          <strong>Náhled konceptu</strong> — toto znění není publikované a čtenáři ho nevidí.{" "}
+          <Link href={`/law/${slug}/edit?seq=${doc!.snapshot.seq}`}>upravit a publikovat →</Link>
+        </p>
+      ) : null}
 
       {dbError ? (
         <p>

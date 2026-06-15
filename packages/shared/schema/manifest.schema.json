@@ -60,7 +60,8 @@
         "fetchedAt": { "type": ["string", "null"], "format": "date-time" },
         "rawSha256": { "type": ["string", "null"] },
         "adapterVersion": { "type": ["string", "null"] },
-        "llmModel": { "type": ["string", "null"], "description": "Set only for the PDF-fallback path (D10)." }
+        "llmModel": { "type": ["string", "null"], "description": "Set only for the PDF-fallback path (D10)." },
+        "commit": { "type": ["string", "null"], "description": "Git commit SHA of the clean-Markdown backup mirror (FR-24, D6)." }
       }
     },
     "unit": {

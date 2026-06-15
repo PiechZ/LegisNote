@@ -49,6 +49,7 @@ export interface ManifestSource {
   rawSha256?: string | null;
   adapterVersion?: string | null;
   llmModel?: string | null;
+  commit?: string | null; // git SHA of the clean-Markdown backup mirror (FR-24)
 }
 
 export interface ManifestUnit {
@@ -105,6 +106,7 @@ export interface LawDocument {
   snapshot: {
     id: string;
     seq: number;
+    status: "draft" | "published"; // editorial gate (FR-17)
     effectiveFrom: string; // ISO date
     effectiveTo?: string | null;
     amendingAct?: string | null;

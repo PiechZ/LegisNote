@@ -56,6 +56,7 @@ class Source(_Model):
     raw_sha256: str | None = Field(default=None, alias="rawSha256")
     adapter_version: str | None = Field(default=None, alias="adapterVersion")
     llm_model: str | None = Field(default=None, alias="llmModel")
+    commit: str | None = None  # git SHA of the clean-Markdown backup mirror (FR-24)
 
 
 class Manifest(_Model):

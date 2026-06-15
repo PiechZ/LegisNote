@@ -26,9 +26,24 @@ legisnote-ingest ingest --citation 91/2012 --title "…" \
 legisnote-ingest ingest --citation 91/2012 --title "…" \
   --effective-from 2023-09-23 --source pdf --from-file source/pdf/91-2012.pdf --use-llm
 
+# Mirror the clean Markdown to a git backup repo (FR-24) and stamp the commit
+# SHA into the manifest (source.commit -> law_snapshot.source_commit):
+legisnote-ingest ingest --citation 91/2012 --title "…" --effective-from 2023-09-23 \
+  --git-mirror-dir /srv/legisnote-source-backup --push
+
 # Push a reviewed manifest to the web importer:
 legisnote-ingest import-manifest source/manifest/91-2012.json
 ```
+
+> **Git backup mirror (FR-24, D6).** PostgreSQL is the live source of truth; git
+> is a backup / source-versioning target. Pass `--git-mirror-dir` (or set
+> `LEGISNOTE_GIT_MIRROR_DIR`) to a dedicated git working tree — the Markdown is
+> committed there and the commit SHA travels in `manifest.source.commit`, which
+> the importer persists as `law_snapshot.source_commit`. Mirroring is idempotent
+> (identical content makes no new commit) and best-effort (a git failure is
+> reported as a warning, not a hard error). Unset → mirroring is skipped so the
+> pipeline never commits into the application repo by accident. `--no-mirror`
+> forces it off even when the env var is set.
 
 ## How it works
 

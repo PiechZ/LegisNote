@@ -24,6 +24,7 @@ import typer
 
 from .adapters import LawGptAdapter
 from .adapters.base import AcquiredDoc, LawRef
+from .config import settings
 from .importer import import_manifest
 from .pipeline import build_outputs
 
@@ -41,6 +42,11 @@ def ingest(
     amending_act: str | None = typer.Option(None, help="Amending act for this snapshot."),
     seq: int = typer.Option(1, help="Snapshot sequence number."),
     use_llm: bool = typer.Option(False, help="(pdf source) run the Claude structure pass (D10)."),
+    git_mirror_dir: Path | None = typer.Option(
+        None, help="Git backup repo for the clean Markdown (FR-24); else LEGISNOTE_GIT_MIRROR_DIR."
+    ),
+    push: bool = typer.Option(False, help="git push the mirror after committing."),
+    no_mirror: bool = typer.Option(False, "--no-mirror", help="Skip the git backup mirror entirely."),
 ) -> None:
     """Acquire a law, parse it, and write clean Markdown + manifest under source/."""
     ref = LawRef.parse(citation)
@@ -65,7 +71,10 @@ def ingest(
     if not effective_from and doc.meta.get("effectiveFrom"):
         typer.echo(f"[auto] effective-from: {resolved_effective_from}")
 
-    md_path, manifest_path = build_outputs(
+    mirror_dir = None if no_mirror else (git_mirror_dir or settings.git_mirror_dir)
+    push_mirror = push or settings.git_mirror_push
+
+    result = build_outputs(
         ref=ref,
         doc=doc,
         title_cs=resolved_title,
@@ -74,9 +83,17 @@ def ingest(
         amending_act=amending_act,
         seq=seq,
         model_version=(doc.meta.get("model") or None) if use_llm else None,
+        git_mirror_dir=mirror_dir,
+        git_mirror_push=push_mirror,
     )
-    typer.echo(f"[ok] Markdown : {md_path}")
-    typer.echo(f"[ok] Manifest : {manifest_path}")
+    typer.echo(f"[ok] Markdown : {result.md_path}")
+    typer.echo(f"[ok] Manifest : {result.manifest_path}")
+    if result.commit:
+        typer.echo(f"[ok] Git backup: {result.commit[:12]} in {mirror_dir} (FR-24)")
+    elif result.mirror_warning:
+        typer.echo(f"[warn] Git mirror skipped: {result.mirror_warning}")
+    elif mirror_dir is None:
+        typer.echo("[skip] Git backup mirror off (set --git-mirror-dir or LEGISNOTE_GIT_MIRROR_DIR).")
     typer.echo("Next: review, then `legisnote-ingest import-manifest <manifest>`.")
 
 

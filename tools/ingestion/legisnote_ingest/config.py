@@ -26,5 +26,14 @@ class Settings:
     manifest_dir: Path = REPO_ROOT / "source" / "manifest"
     cache_dir: Path = REPO_ROOT / "source" / "cache"
 
+    # Git backup mirror of the clean Markdown (FR-24, D6). A dedicated git working
+    # tree (e.g. a clone of a backup remote). Unset → mirroring is skipped so we
+    # never commit into the application repo by accident. Set LEGISNOTE_GIT_MIRROR_PUSH
+    # truthy to `git push` after each commit.
+    git_mirror_dir: Path | None = (
+        Path(os.environ["LEGISNOTE_GIT_MIRROR_DIR"]) if os.getenv("LEGISNOTE_GIT_MIRROR_DIR") else None
+    )
+    git_mirror_push: bool = os.getenv("LEGISNOTE_GIT_MIRROR_PUSH", "").lower() in {"1", "true", "yes", "on"}
+
 
 settings = Settings()

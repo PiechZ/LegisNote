@@ -29,6 +29,10 @@ export const lawRouter = router({
    * current snapshot (D5). Returns null when the law or a viewable snapshot is
    * missing. The tree is reconstructed from `parentUnitId` + `ordinal` (the
    * ltree `path` is Unsupported(...) in Prisma, so we don't query it).
+   *
+   * Editorial gate (FR-17): readers only ever see PUBLISHED snapshots. Editors
+   * may view drafts here too so they can preview before publishing; the
+   * dedicated editing surface is editorial.draftDocument.
    */
   getDocument: publicProcedure
     .input(
@@ -45,22 +49,29 @@ export const lawRouter = router({
       });
       if (!law) return null;
 
+      const role = ctx.session?.user?.role;
+      const isEditor = role === "editor" || role === "admin";
+
       let snapshot = null;
       if (input.seq != null) {
         snapshot = await ctx.db.lawSnapshot.findUnique({
           where: { lawId_seq: { lawId: law.id, seq: input.seq } },
         });
+        // Drafts are visible only to editors (FR-17).
+        if (snapshot && snapshot.status !== "published" && !isEditor) snapshot = null;
       } else if (input.asOf) {
         const asOf = new Date(input.asOf);
         snapshot = await ctx.db.lawSnapshot.findFirst({
           where: {
             lawId: law.id,
+            ...(isEditor ? {} : { status: "published" }),
             effectiveFrom: { lte: asOf },
             OR: [{ effectiveTo: null }, { effectiveTo: { gte: asOf } }],
           },
           orderBy: { effectiveFrom: "desc" },
         });
       } else if (law.currentSnapshotId) {
+        // current_snapshot_id only ever points at a published snapshot.
         snapshot = await ctx.db.lawSnapshot.findUnique({
           where: { id: law.currentSnapshotId },
         });
@@ -130,6 +141,7 @@ export const lawRouter = router({
         snapshot: {
           id: snapshot.id,
           seq: snapshot.seq,
+          status: snapshot.status,
           effectiveFrom: toIsoDate(snapshot.effectiveFrom),
           effectiveTo: snapshot.effectiveTo ? toIsoDate(snapshot.effectiveTo) : null,
           amendingAct: snapshot.amendingAct,
