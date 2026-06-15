@@ -21,8 +21,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-legisnote}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
       POSTGRES_DB: ${POSTGRES_DB:-legisnote}
-    ports:
-      - "127.0.0.1:5432:5432"
+    # No host port: the web container reaches Postgres over the Compose network, so
+    # we don't bind 5432 on the host (avoids clashes with another local Postgres /
+    # the prod stack). Need psql? `docker compose -f docker-compose.local.yml exec postgres psql -U legisnote -d legisnote`
     volumes:
       # Separate from the prod ./data/postgres dir so the two never collide.
       - ./data/postgres-local:/var/lib/postgresql/data

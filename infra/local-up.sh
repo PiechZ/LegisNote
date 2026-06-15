@@ -17,11 +17,12 @@ PGDB="${POSTGRES_DB:-legisnote}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@legisnote.local}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin12345}"
 
-# Prefer the v2 compose plugin; fall back to the legacy binary.
+# `--env-file local.env` pins the dev defaults AND stops Compose from auto-loading
+# infra/.env (production secrets), so the local stack is fully deterministic.
 if docker compose version >/dev/null 2>&1; then
-  DC="docker compose -f $COMPOSE_FILE"
+  DC="docker compose -f $COMPOSE_FILE --env-file local.env"
 elif command -v docker-compose >/dev/null 2>&1; then
-  DC="docker-compose -f $COMPOSE_FILE"
+  DC="docker-compose -f $COMPOSE_FILE --env-file local.env"
 else
   echo "ERROR: docker compose is not installed, or the Docker daemon isn't running." >&2
   exit 1
@@ -38,7 +39,9 @@ for m in db/migrations/*.sql; do
 done
 
 echo "==> Seeding admin user (idempotent upsert)"
-$DC exec -T -w /repo/apps/web web \
+# MSYS_NO_PATHCONV stops Git Bash (Windows) from mangling the absolute -w path;
+# it's a harmless no-op on Linux/macOS.
+MSYS_NO_PATHCONV=1 $DC exec -T -w /repo/apps/web web \
   node scripts/create-user.mjs "$ADMIN_EMAIL" "$ADMIN_PASSWORD" admin "Admin"
 
 cat <<EOF

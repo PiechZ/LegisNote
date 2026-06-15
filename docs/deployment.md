@@ -31,7 +31,7 @@ PowerShell (no bash) equivalent of the script's core steps:
 
 ```powershell
 cd infra
-docker compose -f docker-compose.local.yml up -d --build --wait
+docker compose -f docker-compose.local.yml --env-file local.env up -d --build --wait
 # schema.sql is applied automatically on the empty volume; this migration is a
 # no-op on a fresh DB and required only for a pre-existing one (FR-16/17 column):
 Get-Content db/migrations/001_publish_gate.sql | `
