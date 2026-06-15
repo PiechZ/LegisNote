@@ -16,7 +16,15 @@ interface LawGptData {
 }
 
 async function getData(url: string): Promise<LawGptData> {
-  const resp = await fetch(url, { headers: { accept: "application/json" } });
+  // One retry: the very first outbound request after a cold start can fail at the
+  // network layer ("fetch failed") before egress is warm.
+  let resp: Response;
+  try {
+    resp = await fetch(url, { headers: { accept: "application/json" }, cache: "no-store" });
+  } catch {
+    await new Promise((r) => setTimeout(r, 600));
+    resp = await fetch(url, { headers: { accept: "application/json" }, cache: "no-store" });
+  }
   if (!resp.ok) throw new Error(`LawGPT ${resp.status} pro ${url}`);
   const payload = (await resp.json()) as Record<string, unknown>;
   if (payload && typeof payload === "object" && payload.success === false) {
