@@ -43,6 +43,14 @@ export default async function ExamDetailPage({ params }: { params: { id: string 
               ? "Zatím nejsou označena žádná ustanovení."
               : `Označeno ustanovení: ${detail.count} v ${detail.laws.length} ${detail.laws.length === 1 ? "zákoně" : "zákonech"}.`}
           </p>
+          {detail.count > 0 ? (
+            <nav className="panelbar">
+              <strong>Export:</strong>{" "}
+              <a href={`/api/export/exam/${detail.exam.id}?format=screen`}>PDF (obrazovka)</a>
+              {" · "}
+              <a href={`/api/export/exam/${detail.exam.id}?format=print`}>PDF (tisk)</a>
+            </nav>
+          ) : null}
 
           {detail.laws.map((law) => (
             <section key={law.slug} style={{ margin: "1.25rem 0" }}>

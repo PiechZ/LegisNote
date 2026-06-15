@@ -203,9 +203,12 @@ export default async function LawPage({
 
           <nav className="panelbar">
             <strong>Export:</strong>{" "}
-            <a href={`/api/export/${slug}?format=screen${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}`}>PDF (obrazovka)</a>
+            <a href={`/api/export/${slug}?format=screen${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}${examId ? `&exam=${examId}` : ""}`}>PDF (obrazovka)</a>
             {" · "}
-            <a href={`/api/export/${slug}?format=print${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}`}>PDF (tisk)</a>
+            <a href={`/api/export/${slug}?format=print${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}${examId ? `&exam=${examId}` : ""}`}>PDF (tisk)</a>
+            <span className="muted" style={{ marginLeft: "0.6rem", fontSize: "0.85rem" }}>
+              včetně poznámek, štítků a zvýraznění{currentExam ? ` · zvýrazněno pro „${currentExam.name}“` : ""}
+            </span>
           </nav>
 
           <Reader doc={doc} ctx={ctx} />
