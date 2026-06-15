@@ -118,8 +118,8 @@ export default async function LawPage({
       </p>
 
       {isEditor && parsed && editorial ? (
-        <nav style={{ margin: "0.75rem 0", padding: "0.6rem 0.85rem", border: "1px solid #6366f155", background: "#6366f114", borderRadius: 8, fontSize: "0.9rem", display: "flex", gap: "0.85rem", alignItems: "center", flexWrap: "wrap" }}>
-          <strong>Editor</strong>
+        <nav className="panelbar" style={{ display: "flex", gap: "0.85rem", alignItems: "center", flexWrap: "wrap" }}>
+          <strong className="eyebrow">Editor</strong>
           <Link href={`/law/${slug}/edit`}>upravit text / publikovat →</Link>
           {draftCount > 0 ? (
             <span style={{ color: "#b45309" }}>
@@ -132,7 +132,7 @@ export default async function LawPage({
       ) : null}
 
       {viewingDraft ? (
-        <p style={{ margin: "0.75rem 0", padding: "0.6rem 0.85rem", border: "1px solid #f59e0b66", background: "#f59e0b18", borderRadius: 8, fontSize: "0.9rem" }}>
+        <p className="panelbar" style={{ borderLeftColor: "#e8a317" }}>
           <strong>Náhled konceptu</strong> — toto znění není publikované a čtenáři ho nevidí.{" "}
           <Link href={`/law/${slug}/edit?seq=${doc!.snapshot.seq}`}>upravit a publikovat →</Link>
         </p>
@@ -151,7 +151,7 @@ export default async function LawPage({
       ) : (
         <>
           {hasHistory ? (
-            <nav style={{ margin: "1rem 0", padding: "0.75rem 1rem", border: "1px solid #8884", borderRadius: 8, fontSize: "0.9rem" }}>
+            <nav className="panelbar">
               <strong>Verze (znění):</strong>{" "}
               {changeSet.snapshots.map((s) => {
                 const active = s.id === changeSet!.currentSnapshotId;
@@ -176,7 +176,7 @@ export default async function LawPage({
             </nav>
           ) : null}
 
-          <nav style={{ margin: "1rem 0", padding: "0.75rem 1rem", border: "1px solid #8884", borderRadius: 8, fontSize: "0.9rem" }}>
+          <nav className="panelbar">
             <form method="get" action={`/law/${slug}`} style={{ display: "inline-flex", gap: "0.4rem", alignItems: "center" }}>
               <label>
                 <strong>Studijní zvýraznění:</strong>{" "}
@@ -201,7 +201,7 @@ export default async function LawPage({
             </Link>
           </nav>
 
-          <nav style={{ margin: "1rem 0", padding: "0.75rem 1rem", border: "1px solid #8884", borderRadius: 8, fontSize: "0.9rem" }}>
+          <nav className="panelbar">
             <strong>Export:</strong>{" "}
             <a href={`/api/export/${slug}?format=screen${seq ? `&seq=${seq}` : ""}${asOf ? `&asOf=${asOf}` : ""}`}>PDF (obrazovka)</a>
             {" · "}

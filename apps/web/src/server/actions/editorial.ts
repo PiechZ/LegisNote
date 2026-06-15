@@ -45,8 +45,35 @@ export async function unpublishSnapshotAction(slug: string, snapshotId: string):
 }
 
 export type ImportActionResult =
-  | { ok: true; slug: string; citation: string; status: string; unitsInserted: number; nodesCreated: number; nodesMatched: number }
+  | { ok: true; slug: string; citation: string; status: string; unitsInserted: number; nodesCreated: number; nodesMatched: number; titleCs?: string }
   | { ok: false; error: string };
+
+/** Fetch a law from LawGPT by citation and import it as a draft (editor-gated). */
+export async function importFromLawGptAction(number: string, year: number): Promise<ImportActionResult> {
+  try {
+    const caller = await getCaller();
+    const r = await caller.editorial.importFromLawGpt({ number, year });
+    revalidatePath("/");
+    revalidatePath(`/law/${r.slug}`);
+    return {
+      ok: true,
+      slug: r.slug,
+      citation: r.citation,
+      titleCs: r.titleCs,
+      status: r.status,
+      unitsInserted: r.unitsInserted,
+      nodesCreated: r.nodesCreated,
+      nodesMatched: r.nodesMatched,
+    };
+  } catch (e) {
+    if (e instanceof TRPCError) {
+      if (e.code === "UNAUTHORIZED") return { ok: false, error: "Přihlaste se prosím." };
+      if (e.code === "FORBIDDEN") return { ok: false, error: "Vyžaduje roli editor/admin." };
+      return { ok: false, error: e.message };
+    }
+    return { ok: false, error: e instanceof Error ? e.message : "Načtení z LawGPT selhalo." };
+  }
+}
 
 /** Import a pasted/uploaded manifest.json from the web UI (editor-gated). */
 export async function importManifestAction(jsonText: string): Promise<ImportActionResult> {

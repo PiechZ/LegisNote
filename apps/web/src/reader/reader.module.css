@@ -5,11 +5,13 @@
 .header {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-bottom: 2px solid var(--gold);
 }
 
 .title {
-  font-size: 1.5rem;
+  font-family: var(--font-display, Georgia), serif;
+  font-size: 2rem;
+  line-height: 1.1;
   margin: 0 0 0.25rem;
 }
 
@@ -47,15 +49,17 @@
 .examPill {
   display: inline-block;
   margin: 0.15rem 0;
-  padding: 0.05rem 0.5rem;
-  font-size: 0.8rem;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   border-radius: 999px;
-  background: color-mix(in srgb, royalblue 22%, transparent);
-  border: 1px solid color-mix(in srgb, royalblue 45%, transparent);
+  color: var(--plum);
+  background: color-mix(in srgb, var(--gold) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
 }
 .unit[data-exam-relevant="1"] {
-  border-left: 3px solid color-mix(in srgb, royalblue 60%, transparent);
-  padding-left: 0.5rem;
+  border-left: 3px solid var(--gold);
+  padding-left: 0.6rem;
 }
 
 /* --- versioning: per-unit change indicator + diff (FR-9/10) --- */
@@ -104,17 +108,32 @@
 .unit[data-node-type="title"] > .label,
 .unit[data-node-type="chapter"] > .label {
   display: block;
-  margin: 1.75rem 0 0.25rem;
+  margin: 2rem 0 0.5rem;
   text-align: center;
   text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-family: var(--font-display, Georgia), serif;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  font-size: 0.95rem;
+  color: var(--plum);
+}
+/* Gold-leaf flourish under part headings. */
+.unit[data-node-type="part"] > .label::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 2px;
+  margin: 0.5rem auto 0;
+  background: var(--gold);
 }
 
-/* A § gets a prominent inline label that starts its own block. */
+/* A § gets a prominent gold label that starts its own block. */
 .unit[data-node-type="section"] > .label,
 .unit[data-node-type="paragraph"] > .label {
   display: block;
-  margin-top: 1.1rem;
-  font-size: 1.05rem;
+  margin-top: 1.2rem;
+  font-family: var(--font-display, Georgia), serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--gold);
 }

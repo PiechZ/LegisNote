@@ -3,7 +3,7 @@ import Link from "next/link";
 import { auth, signOut } from "~/server/auth";
 
 /**
- * Server component header strip: shows the signed-in user + role and a sign-out
+ * Compact auth strip for the global header: signed-in user + role and a sign-out
  * button, or a sign-in link. Sign-out is a server action calling Auth.js.
  */
 export async function AuthStatus() {
@@ -11,16 +11,16 @@ export async function AuthStatus() {
 
   if (!session?.user) {
     return (
-      <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+      <span className="authstrip">
         <Link href="/login">Přihlásit se</Link>
-      </p>
+      </span>
     );
   }
 
   return (
-    <p style={{ fontSize: "0.9rem", opacity: 0.8, display: "flex", gap: "0.75rem", alignItems: "center" }}>
-      <span>
-        {session.user.email} · <strong>{session.user.role}</strong>
+    <span className="authstrip">
+      <span title={session.user.email ?? undefined}>
+        <strong style={{ color: "var(--gold)" }}>{session.user.role}</strong>
       </span>
       <form
         action={async () => {
@@ -28,8 +28,8 @@ export async function AuthStatus() {
           await signOut({ redirectTo: "/" });
         }}
       >
-        <button type="submit">Odhlásit se</button>
+        <button type="submit">Odhlásit</button>
       </form>
-    </p>
+    </span>
   );
 }

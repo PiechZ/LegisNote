@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { fetchLawGptManifest } from "../import/lawgpt";
 import { importManifest, isManifestEnvelope } from "../import/manifest";
 import { editorProcedure, router } from "../trpc";
 
@@ -50,6 +51,24 @@ export const editorialRouter = router({
       const m = input.manifest as Manifest;
       const summary = await importManifest(m);
       return { ...summary, slug: `${m.law.number}-${m.law.year}`, citation: m.law.citation };
+    }),
+
+  /**
+   * Fetch a law from the LawGPT.cz proxy by citation, parse it, and import it as
+   * a draft (FR-14/15/22). No browsable catalogue exists upstream, so the UI
+   * drives this by number/year.
+   */
+  importFromLawGpt: editorProcedure
+    .input(z.object({ number: z.string().trim().min(1).max(12), year: z.number().int().min(1918).max(2100) }))
+    .mutation(async ({ input }) => {
+      const manifest = await fetchLawGptManifest(input.number, input.year);
+      const summary = await importManifest(manifest);
+      return {
+        ...summary,
+        slug: `${manifest.law.number}-${manifest.law.year}`,
+        citation: manifest.law.citation,
+        titleCs: manifest.law.titleCs,
+      };
     }),
 
   /** All snapshots of a law with status + unit counts (editor dashboard). */

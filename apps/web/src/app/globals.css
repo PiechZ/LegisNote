@@ -1,52 +1,162 @@
+/* ============================================================================
+   LegisNote — "Illuminated legal review" design system.
+   Deep aubergine ink + gold-leaf accents on warm paper. Editorial serifs.
+   Fonts (--font-display Fraunces, --font-body Newsreader) are wired in layout.tsx
+   and include latin-ext, so Czech diacritics render everywhere.
+   ============================================================================ */
+
 :root {
-  color-scheme: light dark;
-  --accent: #3b6cf0;
-  --radius: 10px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.6;
+  color-scheme: light;
+
+  /* Brand */
+  --gold: #c8920a;
+  --gold-bright: #e0a91a;
+  --plum: #401e5c;
+  --plum-deep: #2a1240;
+
+  /* Light (paper) theme */
+  --bg: #faf5ea;
+  --bg-tint: #f3ead7;
+  --surface: #fffdf8;
+  --surface-2: #f7efe0;
+  --ink: #271633;
+  --ink-soft: #5b4a63;
+  --line: #e3d6bd;
+  --line-strong: #d6c39c;
+  --accent: var(--plum);
+  --accent-on: #fbf4e6;
+  --shadow: 26px 30px 60px -40px rgba(40, 20, 64, 0.45);
+  --shadow-sm: 0 2px 10px -4px rgba(40, 20, 64, 0.28);
+
+  --radius: 12px;
+  --radius-lg: 18px;
+  --maxw: 60rem;
+
+  /* --font-display (Fraunces) and --font-body (Newsreader) are injected by
+     next/font in layout.tsx; serif fallbacks below cover the load window. */
+  line-height: 1.65;
+  font-size: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --gold: #e6b22e;
+    --gold-bright: #f4c43f;
+    --plum: #b59ad0;
+    --plum-deep: #cdb6e4;
+    --bg: #181020;
+    --bg-tint: #1f1430;
+    --surface: #221634;
+    --surface-2: #2b1d40;
+    --ink: #efe7da;
+    --ink-soft: #b6a8c4;
+    --line: #3a2a4f;
+    --line-strong: #4d3868;
+    --accent: var(--gold);
+    --accent-on: #1a1024;
+    --shadow: 30px 34px 70px -44px rgba(0, 0, 0, 0.8);
+    --shadow-sm: 0 2px 12px -4px rgba(0, 0, 0, 0.6);
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  padding: 2rem clamp(1rem, 5vw, 4rem);
+  font-family: var(--font-body, Georgia), "Times New Roman", serif;
+  color: var(--ink);
+  background-color: var(--bg);
+  /* Subtle layered atmosphere: warm gold glow + plum vignette over paper. */
+  background-image:
+    radial-gradient(60rem 40rem at 85% -10%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 60%),
+    radial-gradient(50rem 50rem at -10% 0%, color-mix(in srgb, var(--plum) 16%, transparent), transparent 55%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 main {
-  max-width: 54rem;
+  max-width: var(--maxw);
   margin: 0 auto;
+  padding: 2.5rem clamp(1rem, 5vw, 3rem) 5rem;
 }
 
+/* --- Typography ----------------------------------------------------------- */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display, Georgia), serif;
+  font-weight: 600;
+  font-optical-sizing: auto;
+  color: var(--ink);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
 h1 {
-  font-size: 1.7rem;
-  line-height: 1.2;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+h2 {
+  font-size: 1.6rem;
+  margin: 0 0 0.6rem;
+}
+h3 {
+  font-size: 1.25rem;
+}
+p {
+  margin: 0 0 1rem;
+}
+small {
+  color: var(--ink-soft);
 }
 
 a {
   color: var(--accent);
   text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  transition: color 0.15s ease;
 }
 a:hover {
+  color: var(--gold);
   text-decoration: underline;
 }
 
-/* Bigger, self-explanatory controls everywhere. */
+code {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.05em 0.4em;
+}
+
+/* --- Buttons -------------------------------------------------------------- */
 button {
-  font: inherit;
+  font-family: var(--font-body);
+  font-size: 0.98rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.5rem 0.9rem;
-  border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  background: color-mix(in srgb, currentColor 7%, transparent);
-  color: inherit;
-  transition: background 0.12s ease, transform 0.05s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 button:hover:not(:disabled) {
-  background: color-mix(in srgb, currentColor 14%, transparent);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 button:active:not(:disabled) {
   transform: translateY(1px);
@@ -54,46 +164,168 @@ button:active:not(:disabled) {
 button:disabled {
   opacity: 0.5;
   cursor: progress;
+  box-shadow: none;
 }
 
-/* Primary submit buttons read as the main action. */
+/* Primary action = inked plum (light) / gold (dark), with a gold-leaf hover. */
 button[type="submit"] {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--accent-on);
 }
 button[type="submit"]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 85%, black);
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #25131a;
 }
 
+/* --- Form controls -------------------------------------------------------- */
 input,
 select,
 textarea {
-  font: inherit;
-  padding: 0.45rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--surface);
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-  background: Canvas;
-  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--ink-soft) 70%, transparent);
 }
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent);
 }
 
-code {
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: 0.9em;
+/* --- Surfaces ------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.4rem;
 }
 
-/* Reusable toolbar/card surfaces (used by the reader nav blocks). */
+/* Reader nav / toolbars — paper card with a gold left rule. */
 .panelbar {
   margin: 1rem 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  padding: 0.85rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
   border-radius: var(--radius);
-  background: color-mix(in srgb, currentColor 3%, transparent);
-  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.95rem;
+}
+
+/* Gold-leaf hairline divider, like a legal document rule. */
+.rule {
+  height: 1px;
+  border: 0;
+  margin: 2rem 0;
+  background: linear-gradient(90deg, transparent, var(--line-strong) 12%, var(--gold) 50%, var(--line-strong) 88%, transparent);
+}
+
+/* --- Global site header --------------------------------------------------- */
+.siteheader {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.7rem clamp(1rem, 5vw, 3rem);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.siteheader__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.siteheader__brand:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+.siteheader__logo {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0.25rem;
+  background: #fffdf8;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+}
+.siteheader__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.siteheader__nav {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+.siteheader__nav a {
+  color: var(--ink-soft);
+}
+.siteheader__nav a:hover {
+  color: var(--gold);
+}
+
+/* Compact auth strip living in the header. */
+.authstrip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.authstrip button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+/* --- Small reusable bits -------------------------------------------------- */
+.eyebrow {
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
 }
