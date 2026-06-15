@@ -10,8 +10,9 @@
   margin: 0.5rem 0 1rem;
   border: 1px solid #8884;
   border-radius: 8px;
-  background: var(--panel-bg, #ffffffee);
-  backdrop-filter: blur(4px);
+  /* Canvas/CanvasText adapt to light & dark, so the bar is never white-on-white. */
+  background: Canvas;
+  color: CanvasText;
 }
 
 .badgeDraft,

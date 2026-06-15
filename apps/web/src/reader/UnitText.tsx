@@ -11,6 +11,7 @@ import {
   removeTagAction,
 } from "~/server/actions/overlay";
 import { addHighlightAction, removeHighlightAction } from "~/server/actions/study";
+import { DEFAULT_TAG, HIGHLIGHT_COLORS, TAG_COLORS } from "~/lib/palette";
 
 import styles from "./unittext.module.css";
 
@@ -68,8 +69,9 @@ function canRemove(d: RangeDeco, isEditor: boolean): boolean {
 export function UnitText({ nodeId, text, slug, isEditor, isAuthed, ranges }: Props) {
   const ref = useRef<HTMLSpanElement>(null);
   const [sel, setSel] = useState<Sel | null>(null);
-  const [mode, setMode] = useState<"menu" | "tag" | "note">("menu");
+  const [mode, setMode] = useState<"menu" | "highlight" | "tag" | "note">("menu");
   const [tagName, setTagName] = useState("");
+  const [tagColor, setTagColor] = useState(DEFAULT_TAG);
   const [note, setNote] = useState("");
   const [popover, setPopover] = useState<{ x: number; y: number; deco: RangeDeco } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -78,6 +80,7 @@ export function UnitText({ nodeId, text, slug, isEditor, isAuthed, ranges }: Pro
     setSel(null);
     setMode("menu");
     setTagName("");
+    setTagColor(DEFAULT_TAG);
     setNote("");
     window.getSelection()?.removeAllRanges();
   }
@@ -173,7 +176,7 @@ export function UnitText({ nodeId, text, slug, isEditor, isAuthed, ranges }: Pro
           {mode === "menu" ? (
             <>
               {isAuthed ? (
-                <button type="button" disabled={pending} onClick={() => apply(() => addHighlightAction(slug, nodeId, selector))}>
+                <button type="button" disabled={pending} onClick={() => setMode("highlight")}>
                   🖊️ Zvýraznit
                 </button>
               ) : null}
@@ -189,14 +192,41 @@ export function UnitText({ nodeId, text, slug, isEditor, isAuthed, ranges }: Pro
               ) : null}
               {!isAuthed ? <span className={styles.hint}>Přihlaste se pro zvýraznění</span> : null}
             </>
+          ) : mode === "highlight" ? (
+            <span className={styles.swatches}>
+              {HIGHLIGHT_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  className={styles.swatch}
+                  style={{ background: c.value }}
+                  title={c.name}
+                  disabled={pending}
+                  onClick={() => apply(() => addHighlightAction(slug, nodeId, selector, c.value))}
+                />
+              ))}
+            </span>
           ) : mode === "tag" ? (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (tagName.trim()) apply(() => addTagAction(slug, nodeId, tagName.trim(), undefined, selector));
+                if (tagName.trim()) apply(() => addTagAction(slug, nodeId, tagName.trim(), tagColor, selector));
               }}
             >
               <input autoFocus placeholder="štítek" value={tagName} onChange={(e) => setTagName(e.target.value)} />
+              <span className={styles.swatches}>
+                {TAG_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    className={`${styles.swatch} ${tagColor === c.value ? styles.swatchOn : ""}`}
+                    style={{ background: c.value }}
+                    title={c.name}
+                    aria-pressed={tagColor === c.value}
+                    onClick={() => setTagColor(c.value)}
+                  />
+                ))}
+              </span>
               <button type="submit" disabled={pending}>uložit</button>
             </form>
           ) : (

@@ -19,6 +19,7 @@ import {
   removeExamHighlightAction,
   toggleMyHighlightAction,
 } from "~/server/actions/study";
+import { DEFAULT_TAG, TAG_COLORS } from "~/lib/palette";
 
 import styles from "./overlay.module.css";
 
@@ -62,7 +63,7 @@ export function UnitOverlay({
 
   // add-form fields
   const [tagName, setTagName] = useState("");
-  const [tagColor, setTagColor] = useState("");
+  const [tagColor, setTagColor] = useState(DEFAULT_TAG);
   const [annotation, setAnnotation] = useState("");
   const [comment, setComment] = useState("");
   const [linkDst, setLinkDst] = useState("");
@@ -184,12 +185,24 @@ export function UnitOverlay({
                   if (!tagName.trim()) return;
                   apply(() => addTagAction(slug, nodeId, tagName.trim(), tagColor || undefined), () => {
                     setTagName("");
-                    setTagColor("");
+                    setTagColor(DEFAULT_TAG);
                   });
                 }}
               >
                 <input placeholder="Nový štítek" value={tagName} onChange={(e) => setTagName(e.target.value)} />
-                <input type="color" value={tagColor || "#888888"} onChange={(e) => setTagColor(e.target.value)} title="Barva štítku" />
+                <span className={styles.swatches}>
+                  {TAG_COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      className={`${styles.swatch} ${tagColor === c.value ? styles.swatchOn : ""}`}
+                      style={{ background: c.value }}
+                      title={c.name}
+                      aria-pressed={tagColor === c.value}
+                      onClick={() => setTagColor(c.value)}
+                    />
+                  ))}
+                </span>
                 <button type="submit" disabled={pending}>+ štítek</button>
               </form>
 

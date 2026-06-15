@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 
-import type { NodeType } from "@legisnote/shared";
+import type { Manifest, NodeType } from "@legisnote/shared";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { importManifest, isManifestEnvelope } from "../import/manifest";
 import { editorProcedure, router } from "../trpc";
 
 /**
@@ -35,6 +36,22 @@ export interface EditableUnit {
 }
 
 export const editorialRouter = router({
+  /**
+   * Import a manifest from the web UI (FR-14/15/17) — same upsert as the
+   * token-authed /api/import, but gated by the editor role instead of a bearer
+   * token. The snapshot lands as a draft; the editor then cleans + publishes.
+   */
+  importManifest: editorProcedure
+    .input(z.object({ manifest: z.unknown() }))
+    .mutation(async ({ input }) => {
+      if (!isManifestEnvelope(input.manifest)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Neplatný manifest (chybí law/units/manifestVersion)." });
+      }
+      const m = input.manifest as Manifest;
+      const summary = await importManifest(m);
+      return { ...summary, slug: `${m.law.number}-${m.law.year}`, citation: m.law.citation };
+    }),
+
   /** All snapshots of a law with status + unit counts (editor dashboard). */
   snapshots: editorProcedure
     .input(z.object({ number: z.string(), year: z.number().int() }))

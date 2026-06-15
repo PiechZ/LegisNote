@@ -142,7 +142,12 @@ export const overlayRouter = router({
     .mutation(async ({ ctx, input }) => {
       const anchor = await anchorFor(ctx.db, input.nodeId, input.selector);
       let tag = await ctx.db.tag.findFirst({ where: { scope: "shared", ownerId: null, name: input.name } });
-      tag ??= await ctx.db.tag.create({ data: { scope: "shared", name: input.name, color: input.color ?? null } });
+      if (!tag) {
+        tag = await ctx.db.tag.create({ data: { scope: "shared", name: input.name, color: input.color ?? null } });
+      } else if (input.color && tag.color !== input.color) {
+        // Keep the catalogue colour in sync when an editor recolours a tag.
+        tag = await ctx.db.tag.update({ where: { id: tag.id }, data: { color: input.color } });
+      }
       await ctx.db.tagAssignment.upsert({
         where: { tagId_anchorId: { tagId: tag.id, anchorId: anchor.id } },
         update: {},

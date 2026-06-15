@@ -24,6 +24,22 @@ export interface UserHighlightInfo {
   color: string | null;
   note: string | null;
 }
+export interface ExamDetailItem {
+  nodeId: string;
+  label: string;
+  snippet: string;
+  note: string | null;
+}
+export interface ExamDetailLaw {
+  citation: string;
+  slug: string;
+  items: ExamDetailItem[];
+}
+export interface ExamDetail {
+  exam: { id: string; name: string; description: string | null };
+  count: number;
+  laws: ExamDetailLaw[];
+}
 
 export const studyRouter = router({
   exams: publicProcedure.query(({ ctx }) =>
@@ -44,6 +60,72 @@ export const studyRouter = router({
       const byNode: Record<string, ExamHighlightInfo> = {};
       for (const r of rows) byNode[r.anchor.nodeId] = { anchorId: r.anchor.id, note: r.note, weight: r.weight };
       return byNode;
+    }),
+
+  /**
+   * Condensed view of everything flagged for one exam (FR-13), grouped by law:
+   * each highlighted provision with its label, a text snippet, and the curator's
+   * note. Labels/snippets come from each law's current published snapshot.
+   */
+  examDetail: publicProcedure
+    .input(z.object({ examId: z.string().uuid() }))
+    .query(async ({ ctx, input }): Promise<ExamDetail | null> => {
+      const exam = await ctx.db.exam.findUnique({
+        where: { id: input.examId },
+        select: { id: true, name: true, description: true },
+      });
+      if (!exam) return null;
+
+      const highlights = await ctx.db.examHighlight.findMany({
+        where: { examId: input.examId },
+        select: {
+          note: true,
+          anchor: {
+            select: {
+              nodeId: true,
+              law: { select: { number: true, year: true, citation: true, currentSnapshotId: true } },
+            },
+          },
+        },
+      });
+
+      // Resolve labels + snippets from each law's current snapshot in one query.
+      const nodeIds = highlights.map((h) => h.anchor.nodeId);
+      const snapIds = [
+        ...new Set(highlights.map((h) => h.anchor.law.currentSnapshotId).filter((s): s is string => Boolean(s))),
+      ];
+      const units = nodeIds.length
+        ? await ctx.db.snapshotUnit.findMany({
+            where: { nodeId: { in: nodeIds }, snapshotId: { in: snapIds } },
+            select: { nodeId: true, label: true, text: true },
+          })
+        : [];
+      const unitByNode = new Map(units.map((u) => [u.nodeId, u]));
+
+      const lawMap = new Map<string, ExamDetailLaw>();
+      for (const h of highlights) {
+        const l = h.anchor.law;
+        const slug = `${l.number}-${l.year}`;
+        const group = lawMap.get(slug) ?? { citation: l.citation, slug, items: [] };
+        const u = unitByNode.get(h.anchor.nodeId);
+        const text = u?.text?.trim() ?? "";
+        group.items.push({
+          nodeId: h.anchor.nodeId,
+          label: u?.label?.trim() || "ustanovení",
+          snippet: text.length > 160 ? `${text.slice(0, 160)}…` : text,
+          note: h.note,
+        });
+        lawMap.set(slug, group);
+      }
+
+      const labelNum = (s: string): number => {
+        const m = /\d+/.exec(s);
+        return m ? Number(m[0]) : Number.MAX_SAFE_INTEGER;
+      };
+      const laws = [...lawMap.values()].sort((a, b) => a.citation.localeCompare(b.citation));
+      for (const law of laws) law.items.sort((a, b) => labelNum(a.label) - labelNum(b.label) || a.label.localeCompare(b.label));
+
+      return { exam, count: highlights.length, laws };
     }),
 
   createExam: editorProcedure

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { type ActionResult, createExamAction, deleteExamAction } from "~/server/actions/study";
@@ -57,7 +58,7 @@ export function ExamAdmin({ exams, isEditor }: { exams: ExamRow[]; isEditor: boo
           {exams.map((ex) => (
             <li key={ex.id} style={{ display: "flex", gap: "0.75rem", alignItems: "baseline", justifyContent: "space-between" }}>
               <span>
-                <strong>{ex.name}</strong>
+                <Link href={`/exams/${ex.id}`}><strong>{ex.name}</strong></Link>
                 {ex.description ? ` — ${ex.description}` : ""}{" "}
                 <small style={{ opacity: 0.7 }}>({ex.count} ustanovení)</small>
               </span>

@@ -22,8 +22,15 @@ export function ReaderUnitView({
 }) {
   const examHl = ctx.examHighlightByNode[unit.nodeId];
   const myHl = ctx.myHighlightByNode[unit.nodeId];
+  // Whole-unit personal highlight reads as an unobtrusive coloured left bar
+  // rather than a distracting full-width background fill (word-level highlights
+  // keep their inline background — see UnitText).
   const highlightStyle = myHl
-    ? { background: `color-mix(in srgb, ${myHl.color ?? "#ffd54f"} 30%, transparent)` }
+    ? {
+        borderLeft: `4px solid ${myHl.color ?? "#ffd54f"}`,
+        paddingLeft: "0.6rem",
+        marginLeft: "-0.6rem",
+      }
     : undefined;
 
   return (
